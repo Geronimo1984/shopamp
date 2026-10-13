@@ -103,7 +103,7 @@ struct MacSkinView: View {
 
     private var desktopIcons: some View {
         HStack(alignment: .top, spacing: 4) {
-            desktopIcon(MacIcons.mail, "Добавить") { store.isAdding = true }
+            desktopIcon(MacIcons.mail, "Добавить") { store.isEditingMemory = true }
                 .assistAnchor("add")
             desktopIcon(MacIcons.card, "Купить\nснова (\(store.dueSuggestions.count))") { store.addDue() }
                 .assistAnchor("again")
@@ -308,7 +308,7 @@ ScrollView(.vertical, showsIndicators: false) {
                 }
                 Rectangle().fill(Mac.ink).frame(height: 2)
                 HStack(spacing: 8) {
-                    Button("Добавить") { store.isAdding = true }
+                    Button("Добавить") { store.isEditingMemory = true }
                         .buttonStyle(MacButtonStyle(isDefault: true))
                     Button("Изменить") { store.edit(store.selectedID) }
                         .buttonStyle(MacButtonStyle())

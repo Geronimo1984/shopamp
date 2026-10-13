@@ -73,7 +73,7 @@ ScrollView(.vertical, showsIndicators: false) {
     private var tiles: [NavTile] {
         [
             NavTile(image: "sims_nav3", width: 73, title: "Порядок", anchor: "order") { store.toggle(\.sortBought) },
-            NavTile(image: "sims_nav4", width: 83, title: "Добавить", anchor: "add") { store.isAdding = true },
+            NavTile(image: "sims_nav4", width: 83, title: "Добавить", anchor: "add") { store.isEditingMemory = true },
             NavTile(image: "sims_nav5", width: 74, title: "Снова", anchor: "again") { store.addDue() },
             NavTile(image: "sims_nav6", width: 84, title: "Карточки", anchor: "memory") { store.isEditingMemory = true },
             NavTile(image: "sims_nav7", width: 83, title: "Скины", anchor: "skins") { store.isChoosingSkin = true },
@@ -141,7 +141,7 @@ ScrollView(.vertical, showsIndicators: false) {
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.white)
             VStack(alignment: .leading, spacing: 3) {
-                sideLink("Добавить") { store.isAdding = true }
+                sideLink("Добавить") { store.isEditingMemory = true }
                 sideLink("Изменить") { store.edit(store.selectedID) }
                 sideLink("Справка") { store.showHelp = true }
             }
@@ -201,7 +201,7 @@ ScrollView(.vertical, showsIndicators: false) {
                     Text("Shop").font(.custom("Arial", size: 22).weight(.black)).italic().foregroundStyle(Color(hex: 0x10285C))
                     Button {
                         Haptics.tap()
-                        store.isAdding = true
+                        store.isEditingMemory = true
                     } label: {
                         HStack(spacing: 4) {
                             Text("ADD")
@@ -331,7 +331,7 @@ ScrollView(.vertical, showsIndicators: false) {
                 itemRow(item).assistAnchor("list", when: item.id == store.displayItems.first?.id)
             }
             HStack {
-                linkYellow("+ Добавить новый товар") { store.isAdding = true }
+                linkYellow("+ Добавить из карточек") { store.isEditingMemory = true }
                 Spacer()
                 linkYellow("Закончить покупки") { store.finishShopping() }
             }

@@ -272,7 +272,7 @@ ScrollView(.vertical, showsIndicators: false) {
 
     private var actionsRow: some View {
         HStack(spacing: 8) {
-            actionTile("Добавить", icon: AnyView(MSNBuddy().frame(width: 32, height: 34).overlay(alignment: .bottomTrailing) { Image(systemName: "plus.circle.fill").font(.system(size: 14)).foregroundStyle(.white, Aero.limeStroke) })) { store.isAdding = true }
+            actionTile("Добавить", icon: AnyView(MSNBuddy().frame(width: 32, height: 34).overlay(alignment: .bottomTrailing) { Image(systemName: "plus.circle.fill").font(.system(size: 14)).foregroundStyle(.white, Aero.limeStroke) })) { store.isEditingMemory = true }
                 .assistAnchor("add")
             actionTile("Купить снова", icon: AnyView(MusicDiscIcon().frame(width: 34, height: 34))) { store.addDue() }
                 .assistAnchor("again")

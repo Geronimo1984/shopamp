@@ -201,7 +201,7 @@ struct MainWindow: View {
                 store.finishShopping()
             }
             transportButton(.next, index: 4) { store.selectNext() }
-            transportButton(.eject, index: 5) { store.isAdding = true }
+            transportButton(.eject, index: 5) { store.isEditingMemory = true }
 
             // второй ряд: переключатели
             SkinButton {

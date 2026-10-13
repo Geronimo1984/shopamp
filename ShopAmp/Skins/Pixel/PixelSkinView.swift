@@ -91,7 +91,7 @@ ScrollView(.vertical, showsIndicators: false) {
 
     private var toolbar: some View {
         LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 3), spacing: 8) {
-            toolButton("plus", "ДОБАВИТЬ") { store.isAdding = true }
+            toolButton("plus", "ДОБАВИТЬ") { store.isEditingMemory = true }
                 .assistAnchor("add")
             toolButton("pencil", "ИЗМЕНИТЬ") { store.edit(store.selectedID) }
                 .assistAnchor("edit")
@@ -401,7 +401,7 @@ ScrollView(.vertical, showsIndicators: false) {
                 .frame(maxWidth: .infinity, alignment: .leading)
             Button("ADD") {
                 Haptics.tap()
-                store.isAdding = true
+                store.isEditingMemory = true
             }
             .buttonStyle(PixelButtonStyle(fill: .white, text: Px.pink))
         }

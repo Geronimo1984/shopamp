@@ -144,7 +144,7 @@ struct PlaylistWindow: View {
             .background(Color.black)
             .overlay(Rectangle().strokeBorder(Winamp.frameDark, lineWidth: 1.5))
             HStack(spacing: 6) {
-                barButton("ADD") { store.isAdding = true }
+                barButton("ADD") { store.isEditingMemory = true }
                     .assistAnchor("add")
                 barButton("REM") { store.remove(store.selectedID) }
                     .assistAnchor("rem")

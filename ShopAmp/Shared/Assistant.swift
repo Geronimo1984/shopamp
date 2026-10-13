@@ -46,7 +46,7 @@ enum AssistantTips {
         case .mac:
             return [
                 AssistantTip(target: nil, text: "Похоже, вы составляете список покупок. Хотите, покажу, что здесь к чему?"),
-                AssistantTip(target: "add", text: "Это «Добавить» — новый товар в список."),
+                AssistantTip(target: "add", text: "«Добавить» открывает карточки товаров: отметьте, что взять. Новую карточку можно завести там же."),
                 AssistantTip(target: "again", text: "«Купить снова» добавляет всё, что по расчёту уже заканчивается."),
                 AssistantTip(target: "checkbox", text: "Поставьте крестик — и товар куплен."),
                 AssistantTip(target: "list", text: "Нажмите на товар, а потом ещё раз — откроется его карточка: название, количество, «Удалить»."),
@@ -64,7 +64,7 @@ enum AssistantTips {
         case .pixel:
             return [
                 AssistantTip(target: nil, text: "Мяу! Я Луна. Нажимай на меня — расскажу, как тут всё устроено ✦"),
-                AssistantTip(target: "add", text: "«Добавить» — новый предмет в рюкзак-список."),
+                AssistantTip(target: "add", text: "«Добавить» — открою все карточки, отметь, что положить в рюкзак-список. Новую карточку — там же."),
                 AssistantTip(target: "edit", text: "«Изменить» открывает карточку выбранного предмета: название, количество, удалить."),
                 AssistantTip(target: "crane", text: "Нажми на автомат — клешня достанет всё, что пора купить снова."),
                 AssistantTip(target: "again", text: "«Карточки» — все твои товары. Отметь, что взять в поход, и задай сроки — тогда я напомню вовремя."),
@@ -79,11 +79,11 @@ enum AssistantTips {
         case .sims:
             return [
                 AssistantTip(target: nil, text: "Сул-сул! Я пламбоб. Нажимайте на меня — подскажу, что делает каждая кнопка."),
-                AssistantTip(target: "add", text: "«Добавить» — новый товар в список."),
+                AssistantTip(target: "add", text: "«Добавить» — подобрать товары из карточек. Новую карточку можно завести там же."),
                 AssistantTip(target: "again", text: "«Снова» добавляет всё, что по расчёту уже заканчивается."),
                 AssistantTip(target: "memory", text: "«Карточки» — каталог всех товаров. Отметьте, что взять в этот поход, задайте сроки — и нужное появится в списке само."),
                 AssistantTip(target: "order", text: "«Порядок» переносит купленное в конец списка."),
-                AssistantTip(target: "addNow", text: "ADD ▶ NOW — тоже добавить товар."),
+                AssistantTip(target: "addNow", text: "ADD ▶ NOW — тоже подобрать товары из карточек."),
                 AssistantTip(target: "dishes", text: "Это витрина «Купить снова». Нажмите — заканчивающиеся товары попадут в список."),
                 AssistantTip(target: "list", text: "Нажмите на товар, потом ещё раз — откроется карточка. ✎ — изменить, ✓ — куплено."),
                 AssistantTip(target: "skins", text: "«Скины» меняет оформление."),
@@ -96,7 +96,7 @@ enum AssistantTips {
                 AssistantTip(target: "search", text: "Поиск по списку."),
                 AssistantTip(target: "editbar", text: "Зелёный карандаш — изменить выбранный товар, стрелки — выбрать предыдущий или следующий."),
                 AssistantTip(target: "player", text: "▶ в плеере — тоже старт покупок. На экране — куплено : всего."),
-                AssistantTip(target: "add", text: "«Добавить» — новый товар."),
+                AssistantTip(target: "add", text: "«Добавить» — подобрать товары из карточек; новая карточка — там же."),
                 AssistantTip(target: "again", text: "«Купить снова» добавляет всё, что заканчивается."),
                 AssistantTip(target: "list", text: "Нажми на товар, потом ещё раз — откроется карточка. Двойное нажатие — куплено."),
                 AssistantTip(target: "memory", text: "Шестерёнка — задать, как часто ты покупаешь товары."),
@@ -111,7 +111,7 @@ enum AssistantTips {
                 AssistantTip(target: "pause", text: "Кнопка ❚❚ — снять отметку «куплено»."),
                 AssistantTip(target: "stop", text: "Кнопка ■ — закончить покупки. Купленное останется в списке зачёркнутым."),
                 AssistantTip(target: "prev", text: "Крайние кнопки со стрелками — предыдущий и следующий товар."),
-                AssistantTip(target: "eject", text: "Кнопка со стрелкой вверх (eject) — добавить новый товар."),
+                AssistantTip(target: "eject", text: "Кнопка со стрелкой вверх (eject) — добавить товары из карточек."),
                 AssistantTip(target: "lcd", text: "Цифры — куплено : всего. Нажми на них — покажу, сколько осталось."),
                 AssistantTip(target: "qty", text: "Оранжевый ползунок — сколько штук выбранного товара."),
                 AssistantTip(target: "again", text: "Кнопка с круговыми стрелками — добавить всё, что пора купить снова. Лампочка горит — есть что добавить."),
