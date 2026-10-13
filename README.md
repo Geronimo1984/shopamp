@@ -84,12 +84,6 @@ ShopAmp/
 
 SwiftUI, iOS 16+, без сторонних зависимостей. Данные хранятся локально на телефоне (`Documents/shopamp.json`).
 
-## Авторские права
-
-Код — проект **geronimo**. Шрифты Press Start 2P и Monocraft (SIL OFL) и иконки Microsoft Fluent Emoji (MIT) используются по своим лицензиям, тексты лицензий лежат в `ShopAmp/Fonts`.
-
-Графика и персонажи Winamp, Windows XP / MSN, Mac OS / Clippy, The Sims 2, Kirby, Hello Kitty, Sailor Moon принадлежат их правообладателям и использованы в некоммерческом фан-проекте как дань уважения. Если вы правообладатель и против — напишите в Issues, материалы будут убраны.
-
 ---
 
 <p align="center"><sub>накодил geronimo</sub></p>
