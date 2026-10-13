@@ -389,20 +389,16 @@ struct LunaCat: View {
     @State private var meow: Date?
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: 1 / 24)) { context in
+        TimelineView(.animation) { context in
             let t = context.date.timeIntervalSinceReferenceDate
             // моргание: раз в ~4 с, иногда двойное
             let cycle = t.truncatingRemainder(dividingBy: 4.3)
             let blink = cycle < 0.14 || (Int(t / 4.3) % 3 == 0 && cycle > 0.3 && cycle < 0.42)
-            // хвост: плавное покачивание и редкий взмах
-            let flick = t.truncatingRemainder(dividingBy: 7) < 0.6 ? sin(t.truncatingRemainder(dividingBy: 7) / 0.6 * .pi) * 10 : 0
-            let tailAngle = sin(t * 1.7) * 7 + flick
             let talk = context.date.timeIntervalSince(store.assistantTalking)
             let hop: CGFloat = talk < 0.4 ? -CGFloat(sin(talk / 0.4 * .pi)) * 8 : 0
             let glint = (sin(t * 2.4) + 1) / 2
             ZStack(alignment: .topLeading) {
-                Image("luna_tail").interpolation(.none)
-                    .rotationEffect(.degrees(tailAngle), anchor: UnitPoint(x: 31 / 91, y: 80 / 92))
+                LunaTail(t: t)
                 Image("luna_body").interpolation(.none)
                     .scaleEffect(x: 1, y: 1 + CGFloat(sin(t * 2.2)) * 0.008, anchor: .bottom)
                 if blink {
@@ -424,5 +420,75 @@ struct LunaCat: View {
         .onTapGesture {
             store.assistantPing += 1
         }
+    }
+}
+
+/// Хвост Луны: гибкий, изгибается волной от основания к кончику; рисуется по пиксельной сетке
+struct LunaTail: View {
+    let t: Double
+
+    /// Осевая линия хвоста в пикселях спрайта 91×92: от основания у тела до загнутого кончика
+    private static let spine: [CGPoint] = [
+        CGPoint(x: 31, y: 79), CGPoint(x: 27, y: 80), CGPoint(x: 22, y: 79.5), CGPoint(x: 18.5, y: 77.5),
+        CGPoint(x: 16.3, y: 73.5), CGPoint(x: 15.6, y: 68), CGPoint(x: 16, y: 62), CGPoint(x: 16.6, y: 56),
+        CGPoint(x: 17.5, y: 50), CGPoint(x: 18.5, y: 44), CGPoint(x: 19.6, y: 38), CGPoint(x: 20.6, y: 32),
+        CGPoint(x: 21, y: 27), CGPoint(x: 19.5, y: 22.5), CGPoint(x: 15.5, y: 20.8), CGPoint(x: 11.5, y: 21.3),
+        CGPoint(x: 8.5, y: 23), CGPoint(x: 7.5, y: 25.5),
+    ]
+    private static let color = Color(hex: 0x212163)
+
+    var body: some View {
+        Canvas { c, _ in
+            let pts = bentSpine()
+            // все клетки собираются в один контур и заливаются разом — дёшево даже на 60 кадрах
+            var cells = Set<Int>()
+            // толщина: у основания 5 px, к кончику 3.5 px
+            for i in 0..<(pts.count - 1) {
+                let a = pts[i], b = pts[i + 1]
+                let steps = max(Int(hypot(b.x - a.x, b.y - a.y) * 1.5), 1)
+                for k in 0...steps {
+                    let f = CGFloat(k) / CGFloat(steps)
+                    let p = CGPoint(x: a.x + (b.x - a.x) * f, y: a.y + (b.y - a.y) * f)
+                    let along = (CGFloat(i) + f) / CGFloat(pts.count - 1)
+                    let r = 2.5 - along * 0.8
+                    // заливка по клеткам 1 px — хвост остаётся пиксельным
+                    let x0 = Int((p.x - r).rounded()), x1 = Int((p.x + r).rounded()) - 1
+                    let y0 = Int((p.y - r).rounded()), y1 = Int((p.y + r).rounded()) - 1
+                    guard x1 >= x0, y1 >= y0 else { continue }
+                    for x in x0...x1 { for y in y0...y1 {
+                        let dx = CGFloat(x) + 0.5 - p.x, dy = CGFloat(y) + 0.5 - p.y
+                        if dx * dx + dy * dy <= r * r + 0.4 { cells.insert(y * 128 + x) }
+                    } }
+                }
+            }
+            var path = Path()
+            for cell in cells {
+                path.addRect(CGRect(x: cell % 128, y: cell / 128, width: 1, height: 1))
+            }
+            c.fill(path, with: .color(Self.color))
+        }
+        .frame(width: 91, height: 92)
+    }
+
+    /// Каждый сустав поворачивает остаток хвоста: волна бежит от основания к кончику, кончик гнётся сильнее
+    private func bentSpine() -> [CGPoint] {
+        let src = Self.spine
+        let n = src.count
+        // редкий резкий взмах раз в 7 с
+        let cycle = t.truncatingRemainder(dividingBy: 7)
+        let flick = cycle < 0.9 ? sin(cycle / 0.9 * .pi) : 0
+        var out = [src[0]]
+        var angle: Double = 0
+        for i in 1..<n {
+            let f = Double(i) / Double(n - 1)
+            // плавная бегущая волна + общий наклон
+            angle += (sin(t * 1.9 - f * 3.2) * 0.055 + flick * 0.05) * f
+            let prevSrc = src[i - 1], curSrc = src[i]
+            let dx = curSrc.x - prevSrc.x, dy = curSrc.y - prevSrc.y
+            let ca = CGFloat(cos(angle)), sa = CGFloat(sin(angle))
+            let last = out[i - 1]
+            out.append(CGPoint(x: last.x + dx * ca - dy * sa, y: last.y + dx * sa + dy * ca))
+        }
+        return out
     }
 }
