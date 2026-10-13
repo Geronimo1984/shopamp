@@ -276,6 +276,8 @@ ScrollView(.vertical, showsIndicators: false) {
                 .assistAnchor("add")
             actionTile("Купить снова", icon: AnyView(MusicDiscIcon().frame(width: 34, height: 34))) { store.addDue() }
                 .assistAnchor("again")
+            actionTile("Карточки", icon: AnyView(Image("food_shopping_bags").resizable().frame(width: 34, height: 34))) { store.isEditingMemory = true }
+                .assistAnchor("cards")
             actionTile("Меню", icon: AnyView(ChatBubblesIcon().frame(width: 36, height: 34))) { store.openMainMenu() }
         }
     }

@@ -192,6 +192,8 @@ struct HelpView: View {
 
 enum HelpContent {
     static let common = [
+        "Карточки товаров — постоянный каталог: базовые товары, ваш список и всё, что вы заведёте сами. Список покупок — только текущий поход в магазин.",
+        "По умолчанию список покупок наполняется тем, что пора купить по срокам. Остальное отметьте ☑ в «Карточках». «Новый поход» — список заново по срокам, «Очистить список» — пустой список; карточки при этом не теряются.",
         "Добавить товар — кнопка «Добавить» (или «+», ADD, конверт, человечек — в зависимости от скина).",
         "Изменить товар — нажмите на товар, потом нажмите на него ещё раз: откроется карточка с названием, количеством, «Куплено» и «Удалить». Или кнопка «Изменить» / ✎.",
         "Долгое нажатие на товар — короткое меню товара.",
@@ -228,6 +230,7 @@ enum HelpContent {
                 ("▶ в плеере", "СТАРТ — режим покупок (экран входа Windows XP)"),
                 ("добавить", "новый товар (человечек)"),
                 ("снова", "добавить всё из «Купить снова» (диск)"),
+                ("Карточки", "каталог товаров: что взять в поход, сроки, иконки, новые карточки"),
                 ("меню", "все действия (облачка)"),
                 ("список", "нажатие — выбрать, ещё нажатие — карточка товара, двойное — куплено"),
                 ("пузыри", "заканчивается: нажмите на пузырь, чтобы добавить; ⚙ — настроить «Купить снова»"),
@@ -238,6 +241,7 @@ enum HelpContent {
             return [
                 ("Добавить", "иконка-конверт: новый товар"),
                 ("Купить снова", "иконка-карточка: добавить всё, что заканчивается"),
+                ("Карточки", "папка: каталог товаров — отметьте, что взять в поход"),
                 ("Справка", "эта справка; «Меню» — все действия"),
                 ("Control P.", "подсказки вкл/выкл, купленное в конец, прогресс; ползунок справа — количество выбранного товара"),
                 ("☐", "чекбокс у товара — куплено"),
@@ -248,7 +252,7 @@ enum HelpContent {
             ]
         case .sims:
             return [
-                ("меню", "Добавить, Купить снова, Порядок (купленное в конец), Память (настроить «Купить снова»), Скины, Справка"),
+                ("меню", "Добавить, Купить снова, Порядок (купленное в конец), Карточки (каталог товаров и сроки), Скины, Справка"),
                 ("?", "жёлтый значок слева — эта справка"),
                 ("пламбоб", "цвет — прогресс покупок: красный, жёлтый, зелёный"),
                 ("ADD ▶ NOW", "добавить товар"),
@@ -260,7 +264,7 @@ enum HelpContent {
             return [
                 ("ДОБАВИТЬ", "новый предмет (или пустая ячейка с «+»)"),
                 ("ИЗМЕНИТЬ", "карточка выбранного предмета: название, количество, удалить"),
-                ("КУПИТЬ СНОВА", "настроить, как часто покупаете товары"),
+                ("КАРТОЧКИ", "каталог товаров: что взять в поход, сроки, иконки"),
                 ("СКИН / СПРАВКА / МЕНЮ", "смена скина, эта справка, все действия"),
                 ("автомат", "клешня достаёт в рюкзак всё, что пора купить снова"),
                 ("ячейка", "нажатие — выбрать, ещё нажатие — карточка, двойное — в рюкзак (куплено)"),
@@ -272,76 +276,162 @@ enum HelpContent {
     }
 }
 
-// MARK: - Память («Пора купить»)
+// MARK: - Карточки товаров
 
+/// Карточки товаров: постоянный каталог. Отсюда товары попадают в список покупок (текущий поход),
+/// здесь же — сроки «купить снова», иконка, новые карточки и удаление
 struct MemoryView: View {
     @EnvironmentObject var store: ShopStore
     let skin: SkinID
+    @State private var search = ""
+    @State private var expanded: String?
+    @State private var showDueOnly = false
 
     var body: some View {
         let style = SkinStyle.of(skin)
-        SkinChrome(title: "Купить снова", skin: skin, onClose: { store.isEditingMemory = false }) {
+        let query = search.trimmingCharacters(in: .whitespaces).lowercased()
+        let cards = store.cards.filter {
+            (query.isEmpty || $0.name.lowercased().contains(query)) && (!showDueOnly || ($0.daysLeft() ?? 1) == 0)
+        }
+        let exists = store.state.memory[ShopStore.key(search)] != nil
+        SkinChrome(title: "Карточки товаров", skin: skin, onClose: { store.isEditingMemory = false }) {
             VStack(alignment: .leading, spacing: 8) {
-                Text("Задайте, как часто покупаете товар. Когда срок подойдёт, товар появится в «Купить снова». «Авто» — интервал по истории покупок.")
+                Text("Отметьте ☑, что взять в этот поход. Нажмите на карточку — сроки, иконка, удаление.")
                     .font(style.font(13, .regular))
                     .foregroundStyle(style.secondary)
                     .fixedSize(horizontal: false, vertical: true)
-                if store.memoryList.isEmpty {
-                    Text("Память пуста — добавьте товары в список.")
-                        .font(style.font(15, .semibold))
+                HStack(spacing: 6) {
+                    TextField("", text: $search, prompt: Text("Найти или новая карточка").foregroundColor(style.secondary))
+                        .font(style.font(15, .regular))
                         .foregroundStyle(style.text)
-                }
-                ScrollView(.vertical, showsIndicators: true) {
-                    VStack(spacing: 8) {
-                        ForEach(store.memoryList, id: \.name) { memory in
-                            row(memory, style)
+                        .padding(.horizontal, 8)
+                        .frame(height: 38)
+                        .background(RoundedRectangle(cornerRadius: 4).fill(style.rowFill))
+                        .overlay(RoundedRectangle(cornerRadius: 4).stroke(style.rowStroke, lineWidth: 1.5))
+                    if !query.isEmpty && !exists {
+                        SkinChip(title: "+ карточка", style: style, filled: true) {
+                            store.addCard(search)
+                            store.toggleInList(search)
+                            store.notify("Карточка «\(search.trimmingCharacters(in: .whitespaces))» создана и добавлена в список")
+                            search = ""
                         }
                     }
                 }
-                .frame(maxHeight: 460)
+                HStack(spacing: 6) {
+                    SkinChip(title: "Все (\(store.cards.count))", style: style, filled: !showDueOnly) { showDueOnly = false }
+                    SkinChip(title: "Пора купить (\(store.cards.filter { ($0.daysLeft() ?? 1) == 0 }.count))", style: style, filled: showDueOnly) { showDueOnly = true }
+                    Spacer(minLength: 0)
+                }
+                ScrollView(.vertical, showsIndicators: true) {
+                    VStack(spacing: 6) {
+                        ForEach(cards, id: \.name) { memory in
+                            row(memory, style)
+                        }
+                        if cards.isEmpty {
+                            Text(query.isEmpty ? "Карточек нет" : "Не найдено — нажмите «+ карточка»")
+                                .font(style.font(14, .regular))
+                                .foregroundStyle(style.secondary)
+                                .padding(8)
+                        }
+                    }
+                }
+                .frame(maxHeight: 420)
+                HStack(spacing: 6) {
+                    SkinChip(title: "Новый поход", style: style) { store.startNewTrip() }
+                    SkinChip(title: "Очистить список", style: style) {
+                        store.clearAll()
+                        store.notify("Список покупок очищен. Карточки на месте")
+                    }
+                    Spacer(minLength: 0)
+                    SkinChip(title: "Готово", style: style, filled: true) { store.isEditingMemory = false }
+                }
             }
         }
     }
 
     private func row(_ memory: ItemMemory, _ style: SkinStyle) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
+        let inList = store.isInList(memory.name)
+        let open = expanded == memory.name
+        return VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 8) {
+                // в список / из списка
+                Button {
+                    Haptics.tap()
+                    store.toggleInList(memory.name)
+                } label: {
+                    Image(systemName: inList ? "checkmark.square.fill" : "square")
+                        .font(.system(size: 22, weight: .semibold))
+                        .foregroundStyle(inList ? style.accent : style.secondary)
+                        .frame(width: 36, height: 36)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(SkinPressStyle(skin: skin))
                 ProductImage(name: memory.name, size: 28)
-                Text(memory.name)
-                    .font(style.font(16, .bold))
-                    .foregroundStyle(style.text)
-                    .lineLimit(1)
-                Spacer()
-                SkinChip(title: memory.remind ? "🔔 вкл" : "🔕 выкл", style: style, filled: memory.remind) {
-                    store.toggleRemind(memory.name)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(memory.name)
+                        .font(style.font(15, .bold))
+                        .foregroundStyle(style.text)
+                        .lineLimit(1)
+                    Text(shortStatus(memory))
+                        .font(style.font(11, .regular))
+                        .foregroundStyle(style.secondary)
+                        .lineLimit(1)
                 }
-                SkinChip(title: "✕", style: style) { store.forget(memory.name) }
+                Spacer(minLength: 2)
+                Image(systemName: open ? "chevron.up" : "chevron.down")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(style.secondary)
             }
-            Text(status(memory))
-                .font(style.font(13, .regular))
-                .foregroundStyle(style.secondary)
-            HStack(spacing: 6) {
-                Text("раз в").font(style.font(14, .regular)).foregroundStyle(style.text)
-                SkinChip(title: "−", style: style) { change(memory, by: -1) }
-                Text(memory.interval.map { "\(Int($0.rounded())) дн" } ?? "— дн")
-                    .font(style.font(15, .bold))
-                    .foregroundStyle(style.text)
-                    .frame(minWidth: 48)
-                SkinChip(title: "+", style: style) { change(memory, by: 1) }
-                SkinChip(title: "авто", style: style, filled: memory.customInterval == nil) {
-                    store.setInterval(memory.name, days: nil)
+            .contentShape(Rectangle())
+            .onTapGesture {
+                withAnimation(.easeOut(duration: 0.15)) { expanded = open ? nil : memory.name }
+            }
+            if open {
+                Text(status(memory))
+                    .font(style.font(12, .regular))
+                    .foregroundStyle(style.secondary)
+                HStack(spacing: 6) {
+                    Text("раз в").font(style.font(14, .regular)).foregroundStyle(style.text)
+                    SkinChip(title: "−", style: style) { change(memory, by: -1) }
+                    Text(memory.interval.map { "\(Int($0.rounded())) дн" } ?? "— дн")
+                        .font(style.font(15, .bold))
+                        .foregroundStyle(style.text)
+                        .frame(minWidth: 48)
+                    SkinChip(title: "+", style: style) { change(memory, by: 1) }
+                    SkinChip(title: "авто", style: style, filled: memory.customInterval == nil) {
+                        store.setInterval(memory.name, days: nil)
+                    }
+                    Spacer(minLength: 0)
                 }
-                Spacer(minLength: 0)
-            }
-            if memory.interval != nil, memory.lastPurchase == nil {
-                SkinChip(title: "Купил сегодня — начать отсчёт", style: style) {
-                    store.markPurchasedToday(memory.name)
+                HStack(spacing: 6) {
+                    SkinChip(title: memory.remind ? "🔔 напоминать" : "🔕 не напоминать", style: style, filled: memory.remind) {
+                        store.toggleRemind(memory.name)
+                    }
+                    SkinChip(title: "Иконка", style: style) { store.iconPickerName = memory.name }
+                    Spacer(minLength: 0)
+                    SkinChip(title: "Удалить", style: style) {
+                        store.deleteCard(memory.name)
+                        expanded = nil
+                    }
+                }
+                if memory.interval != nil, memory.lastPurchase == nil {
+                    SkinChip(title: "Купил сегодня — начать отсчёт", style: style) {
+                        store.markPurchasedToday(memory.name)
+                    }
                 }
             }
         }
-        .padding(8)
+        .padding(.horizontal, 6)
+        .padding(.vertical, 4)
         .background(RoundedRectangle(cornerRadius: 4).fill(style.rowFill))
-        .overlay(RoundedRectangle(cornerRadius: 4).stroke(style.rowStroke, lineWidth: 1.5))
+        .overlay(RoundedRectangle(cornerRadius: 4).stroke(inList ? style.accent : style.rowStroke, lineWidth: inList ? 2 : 1.5))
+    }
+
+    private func shortStatus(_ memory: ItemMemory) -> String {
+        if !memory.remind { return "без напоминаний" }
+        if let days = memory.daysLeft() { return days == 0 ? "пора купить!" : "через \(days) дн" }
+        if let i = memory.interval { return "раз в \(Int(i.rounded())) дн" }
+        return "срок не задан"
     }
 
     private func change(_ memory: ItemMemory, by step: Double) {

@@ -107,6 +107,8 @@ struct MacSkinView: View {
                 .assistAnchor("add")
             desktopIcon(MacIcons.card, "Купить\nснова (\(store.dueSuggestions.count))") { store.addDue() }
                 .assistAnchor("again")
+            desktopIcon(MacIcons.folder, "Карточки") { store.isEditingMemory = true }
+                .assistAnchor("cards")
             desktopIcon(MacIcons.help, "Справка") { store.showHelp = true }
                 .assistAnchor("help")
             Button {

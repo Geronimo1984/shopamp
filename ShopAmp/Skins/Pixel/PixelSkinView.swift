@@ -95,7 +95,7 @@ ScrollView(.vertical, showsIndicators: false) {
                 .assistAnchor("add")
             toolButton("pencil", "ИЗМЕНИТЬ") { store.edit(store.selectedID) }
                 .assistAnchor("edit")
-            toolButton("arrow.clockwise", "КУПИТЬ СНОВА") { store.isEditingMemory = true }
+            toolButton("square.grid.2x2", "КАРТОЧКИ") { store.isEditingMemory = true }
                 .assistAnchor("again")
             toolButton("paintpalette.fill", "СКИН") { store.isChoosingSkin = true }
                 .assistAnchor("skin")

@@ -83,6 +83,8 @@ struct SavedState: Codable {
     var seenHelp = false
     /// Список пользователя уже добавлен (один раз)
     var addedUserList = false
+    /// Каталог карточек заполнен базовыми товарами, список покупок переведён на «текущий поход»
+    var catalogSeeded = false
     /// Иконка, выбранная вручную: ключ названия товара → имя картинки
     var iconOverrides: [String: String] = [:]
 
@@ -101,6 +103,7 @@ struct SavedState: Codable {
         skin = (try? c.decodeIfPresent(SkinID.self, forKey: .skin)) ?? .winamp
         seenHelp = try c.decodeIfPresent(Bool.self, forKey: .seenHelp) ?? false
         addedUserList = try c.decodeIfPresent(Bool.self, forKey: .addedUserList) ?? false
+        catalogSeeded = try c.decodeIfPresent(Bool.self, forKey: .catalogSeeded) ?? false
         iconOverrides = try c.decodeIfPresent([String: String].self, forKey: .iconOverrides) ?? [:]
     }
 }
@@ -152,8 +155,14 @@ final class ShopStore: ObservableObject {
             state = SavedState()
         }
         selectedID = state.items.first?.id
-        addUserListOnce()
+        seedCatalogOnce()
     }
+
+    /// Базовые карточки, которые были в приложении с самого начала
+    static let baseCards = [
+        "Хлеб бородинский", "Сыр", "Бананы", "Куриное филе", "Помидоры черри", "Гречка",
+        "Зубная паста", "Сок апельсиновый", "Шоколад", "Молоко", "Хлеб", "Вода",
+    ]
 
     /// Список пользователя (присланный 14.10.2026) — добавляется к уже созданным товарам один раз, без дублей
     static let userList = [
@@ -176,14 +185,64 @@ final class ShopStore: ObservableObject {
         state.iconOverrides[key] = asset
     }
 
-    func addUserListOnce() {
-        guard !state.addedUserList else { return }
-        let keep = selectedID
-        for name in Self.userList where !state.items.contains(where: { Self.key($0.name) == Self.key(name) }) {
+    /// Один раз: все базовые товары и список пользователя становятся карточками,
+    /// а список покупок — текущим походом: остаются только свои товары пользователя и то, что пора купить
+    func seedCatalogOnce() {
+        guard !state.catalogSeeded else { return }
+        var s = state
+        let seeded = Set((Self.baseCards + Self.userList).map(Self.key))
+        for name in Self.baseCards + Self.userList where s.memory[Self.key(name)] == nil {
+            s.memory[Self.key(name)] = ItemMemory(name: name)
+        }
+        for item in s.items where s.memory[Self.key(item.name)] == nil {
+            s.memory[Self.key(item.name)] = ItemMemory(name: item.name)
+        }
+        // в списке оставляем только то, что пользователь завёл сам (не из стартовых наборов)
+        s.items.removeAll { seeded.contains(Self.key($0.name)) }
+        s.catalogSeeded = true
+        s.addedUserList = true
+        state = s
+        addDue(silent: true)
+        selectedID = state.items.first?.id
+    }
+
+    // MARK: - Карточки товаров
+
+    /// Все карточки по алфавиту
+    var cards: [ItemMemory] {
+        state.memory.values.sorted { $0.name.localizedCompare($1.name) == .orderedAscending }
+    }
+
+    func isInList(_ name: String) -> Bool {
+        state.items.contains { !$0.bought && Self.key($0.name) == Self.key(name) }
+    }
+
+    /// Карточка в списке покупок ↔ нет
+    func toggleInList(_ name: String) {
+        let key = Self.key(name)
+        if let item = state.items.first(where: { !$0.bought && Self.key($0.name) == key }) {
+            remove(item.id)
+        } else {
             add(name)
         }
-        state.addedUserList = true
-        selectedID = keep ?? state.items.first?.id
+    }
+
+    /// Новая карточка (без добавления в список)
+    @discardableResult
+    func addCard(_ rawName: String) -> Bool {
+        let name = rawName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty, state.memory[Self.key(name)] == nil else { return false }
+        state.memory[Self.key(name)] = ItemMemory(name: name)
+        return true
+    }
+
+    /// Удалить карточку из каталога (список покупок не трогаем)
+    func deleteCard(_ name: String) {
+        let key = Self.key(name)
+        var s = state
+        s.memory[key] = nil
+        s.iconOverrides[key] = nil
+        state = s
     }
 
     private func save() {
@@ -303,9 +362,9 @@ final class ShopStore: ObservableObject {
     func openMainMenu() {
         menu = SkinMenu(title: "Меню", actions: [
             MenuAction(title: "Изменить выбранный товар…") { [weak self] in self?.edit(self?.selectedID) },
-            MenuAction(title: "Добавить всё из «Купить снова»") { [weak self] in self?.addDue() },
-            MenuAction(title: "Настроить «Купить снова»…") { [weak self] in self?.isEditingMemory = true },
-            MenuAction(title: "Новый поход: снять все отметки «куплено»") { [weak self] in self?.startNewTrip() },
+            MenuAction(title: "Подобрать из карточек товаров…") { [weak self] in self?.isEditingMemory = true },
+            MenuAction(title: "Добавить всё, что пора купить") { [weak self] in self?.addDue() },
+            MenuAction(title: "Новый поход (список по срокам)") { [weak self] in self?.startNewTrip() },
             MenuAction(title: state.sortBought ? "Не сортировать купленное" : "Купленное — в конец") { [weak self] in
                 self?.toggle(\.sortBought)
             },
@@ -359,7 +418,7 @@ final class ShopStore: ObservableObject {
             MenuAction(title: item.bought ? "Не куплено" : "Куплено") { [weak self] in self?.toggleBought(id) },
             MenuAction(title: "+1 шт") { [weak self] in self?.setQty(id, item.qty + 1) },
             MenuAction(title: "−1 шт") { [weak self] in self?.setQty(id, item.qty - 1) },
-            MenuAction(title: "Удалить", destructive: true) { [weak self] in self?.remove(id) },
+            MenuAction(title: "Убрать из списка (карточка останется)", destructive: true) { [weak self] in self?.remove(id) },
         ])
     }
 
@@ -470,16 +529,15 @@ final class ShopStore: ObservableObject {
                : "Покупки закончены: в корзине \(bought) из \(totalCount). Купленное осталось в списке зачёркнутым")
     }
 
-    /// Новый поход в магазин: снять все отметки «куплено», история покупок сохраняется
+    /// Новый поход в магазин: список очищается и заполняется тем, что пора купить по срокам.
+    /// Карточки и история покупок не трогаются
     func startNewTrip() {
-        var s = state
-        for i in s.items.indices where s.items[i].bought {
-            s.items[i].bought = false
-            s.items[i].recordedPurchase = nil
-        }
-        state = s
+        state.items.removeAll()
+        let count = addDue(silent: true)
         selectedID = state.items.first?.id
-        notify("Новый поход: отметки «куплено» сняты, список на месте")
+        notify(count > 0
+               ? "Новый поход: в списке \(count) — то, что пора купить по срокам. Остальное — из карточек"
+               : "Новый поход: по срокам пока ничего. Наберите список из карточек")
     }
 
     func clearAll() {
@@ -506,7 +564,8 @@ final class ShopStore: ObservableObject {
     }
 
     func appBecameActive() {
-        if state.autoAdd {
+        // по умолчанию пустой список сам наполняется тем, что пора купить
+        if state.autoAdd || state.items.isEmpty {
             addDue(silent: true)
         }
     }
@@ -550,8 +609,13 @@ extension ShopStore {
         s.showEqualizer = true
         s.seenHelp = true
         store.state = s
-        store.addUserListOnce()
-        store.selectedID = s.items[2].id
+        store.seedCatalogOnce()
+        // для демо в походе ещё пара товаров, один уже куплен
+        store.add("Бананы", qty: 6)
+        store.add("Куриное филе", qty: 2)
+        store.add("Сыр")
+        store.setBought(store.state.items.first { $0.name == "Сыр" }?.id, true)
+        store.selectedID = store.state.items.first { $0.name == "Бананы" }?.id
         return store
     }
 }

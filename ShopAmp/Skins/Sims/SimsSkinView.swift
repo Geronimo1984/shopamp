@@ -75,7 +75,7 @@ ScrollView(.vertical, showsIndicators: false) {
             NavTile(image: "sims_nav3", width: 73, title: "Порядок", anchor: "order") { store.toggle(\.sortBought) },
             NavTile(image: "sims_nav4", width: 83, title: "Добавить", anchor: "add") { store.isAdding = true },
             NavTile(image: "sims_nav5", width: 74, title: "Снова", anchor: "again") { store.addDue() },
-            NavTile(image: "sims_nav6", width: 84, title: "Память", anchor: "memory") { store.isEditingMemory = true },
+            NavTile(image: "sims_nav6", width: 84, title: "Карточки", anchor: "memory") { store.isEditingMemory = true },
             NavTile(image: "sims_nav7", width: 83, title: "Скины", anchor: "skins") { store.isChoosingSkin = true },
             NavTile(image: "sims_nav8", width: 62, title: "Справка", anchor: "help") { store.showHelp = true },
         ]
