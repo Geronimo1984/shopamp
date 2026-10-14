@@ -76,7 +76,8 @@ struct PlaylistWindow: View {
                 .strikethrough(item.bought, color: color.opacity(0.7))
                 .lineLimit(1)
             Spacer(minLength: 8)
-            Text(item.bought ? "✓" : "\(item.qty) шт")
+            Text(item.bought ? "✓" + (store.cost(item).map { " " + ShopStore.rub($0) } ?? "") : store.qtyText(item))
+                .font(.custom("Arial", size: fontSize * 0.8))
         }
         .foregroundStyle(color)
         .padding(.horizontal, 8 * k + 4)
@@ -135,7 +136,9 @@ struct PlaylistWindow: View {
             HStack {
                 Text("\(store.boughtCount)/\(store.totalCount) КУПЛЕНО")
                 Spacer()
-                Text("ОСТАЛОСЬ \(store.leftCount)")
+                Text(store.hasPrices ? "КОРЗИНА \(Int(store.cartTotal.rounded()))/" + ShopStore.total(store.listTotal) : "ОСТАЛОСЬ \(store.leftCount)")
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
             }
             .font(.system(size: 13, weight: .bold, design: .monospaced))
             .foregroundStyle(Winamp.listGreen)

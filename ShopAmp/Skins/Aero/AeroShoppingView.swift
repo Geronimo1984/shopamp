@@ -121,6 +121,21 @@ struct AeroShoppingView: View {
                 .font(Aero.xp(11, .bold))
                 .foregroundStyle(Aero.welcomeSub)
                 .padding(.top, 4)
+            if store.hasPrices {
+                // сумма корзины крупно — видно, сколько уже набрано
+                Text(ShopStore.total(store.cartTotal))
+                    .font(Aero.xp(20, .bold))
+                    .foregroundStyle(.white)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+                    .contentTransition(.numericText())
+                    .animation(.spring(response: 0.35), value: store.cartTotal)
+                Text("из ~" + ShopStore.total(store.listTotal))
+                    .font(Aero.xp(11, .bold))
+                    .foregroundStyle(Aero.welcomeSub)
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+            }
             Spacer()
         }
         .padding(.leading, 8)
@@ -306,11 +321,14 @@ struct AeroShoppingView: View {
                     .minimumScaleFactor(0.7)
                 if selected && !item.bought {
                     HStack(spacing: 5) {
-                        Text("\(item.qty) шт")
+                        Text(store.qtyText(item))
                             .font(Aero.xp(13))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.6)
                             .foregroundStyle(.black)
                             .padding(.horizontal, 6)
-                            .frame(width: 62, height: 28, alignment: .leading)
+                            .frame(minWidth: 62, maxWidth: 130, minHeight: 28, maxHeight: 28, alignment: .leading)
+                            .fixedSize(horizontal: true, vertical: false)
                             .background(RoundedRectangle(cornerRadius: 3).fill(.white))
                             .overlay(RoundedRectangle(cornerRadius: 3).stroke(Color(hex: 0x8FA9D8), lineWidth: 1))
                         squareButton("arrow.right", colors: [Color(hex: 0x7BD86A), Color(hex: 0x2E9A2A)]) {
@@ -322,7 +340,7 @@ struct AeroShoppingView: View {
                         }
                     }
                 } else {
-                    Text(item.bought ? "в корзине ✓" : "\(item.qty) шт · смахните вправо")
+                    Text(item.bought ? "в корзине ✓" + (store.cost(item).map { " · " + ShopStore.rub($0) } ?? "") : store.qtyText(item) + " · смахните вправо")
                         .font(Aero.xp(11, .bold))
                         .foregroundStyle(Aero.welcomeSub)
                         .frame(height: 28, alignment: .leading)

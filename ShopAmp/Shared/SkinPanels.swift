@@ -8,6 +8,8 @@ struct SkinStyle {
     let accent: Color
     let rowFill: Color
     let rowStroke: Color
+    /// Цвет текста на заливке акцентом (по умолчанию — цвет фона строки)
+    var onAccent: Color? = nil
 
     static func of(_ skin: SkinID) -> SkinStyle {
         switch skin {
@@ -26,7 +28,7 @@ struct SkinStyle {
         case .sims:
             return SkinStyle(font: { Sims.font($0 - 2, $1) }, text: .white,
                              secondary: Color(hex: 0xDCE7FF), accent: Sims.link,
-                             rowFill: Color.white.opacity(0.12), rowStroke: Sims.panelBorder)
+                             rowFill: Color.white.opacity(0.12), rowStroke: Sims.panelBorder, onAccent: Sims.ink)
         case .pixel:
             return SkinStyle(font: { Px.body($0, $1) }, text: Px.navy,
                              secondary: Px.ink, accent: Px.pink,
@@ -134,7 +136,7 @@ struct SkinChip: View {
         } label: {
             Text(title)
                 .font(style.font(14, .semibold))
-                .foregroundStyle(filled ? style.rowFill : style.text)
+                .foregroundStyle(filled ? (style.onAccent ?? style.rowFill) : style.text)
                 .padding(.horizontal, 9)
                 .frame(minWidth: 40, minHeight: 38)
                 .background(RoundedRectangle(cornerRadius: 4).fill(filled ? style.accent : style.rowFill))
@@ -197,6 +199,7 @@ enum HelpContent {
         "Добавить в список — кнопка «Добавить» (ADD, ⏏, конверт, человечек — в зависимости от скина): откроются карточки товаров, отметьте ☑ нужное. Нового товара нет в карточках — «+ Новая карточка» там же.",
         "Изменить товар — нажмите на товар, потом нажмите на него ещё раз: откроется карточка с названием, количеством, «Куплено» и «Удалить». Или кнопка «Изменить» / ✎.",
         "Долгое нажатие на товар — короткое меню товара.",
+        "Ориентировочная цена за штуку задаётся в карточке товара или в окне товара («Цена ~»). Сумма корзины — купленное в этом походе, рядом — сколько стоит весь список. Цена запоминается в карточке и подставляется в следующие походы.",
         "Купленное никогда не удаляется само: оно зачёркнуто и остаётся в списке. Снять все отметки — меню → «Новый поход». Удалить товар — только кнопкой «Удалить».",
         "«Купить снова» — товары, которые вы покупаете регулярно и которые, по расчёту, уже заканчиваются. Для каждого товара можно задать «раз в N дней» в окне «Купить снова» (меню → «Настроить «Купить снова»…»). Без настройки интервал считается сам после покупок в 2 разных дня.",
     ]
@@ -286,6 +289,7 @@ struct MemoryView: View {
     @State private var search = ""
     @State private var expanded: String?
     @State private var showDueOnly = false
+    @State private var priceDrafts: [String: String] = [:]
     @FocusState private var searchFocused: Bool
 
     var body: some View {
@@ -297,7 +301,7 @@ struct MemoryView: View {
         let exists = store.state.memory[ShopStore.key(search)] != nil
         SkinChrome(title: "Карточки товаров", skin: skin, onClose: { store.isEditingMemory = false }) {
             VStack(alignment: .leading, spacing: 8) {
-                Text("Отметьте ☑, что взять в этот поход. Нажмите на карточку — сроки, иконка, удаление. Нет нужного товара — «+ Новая карточка».")
+                Text("Отметьте ☑, что взять в этот поход. Нажмите на карточку — цена, сроки, иконка, удаление. Нет нужного товара — «+ Новая карточка».")
                     .font(style.font(13, .regular))
                     .foregroundStyle(style.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -419,6 +423,12 @@ struct MemoryView: View {
                     }
                     Spacer(minLength: 0)
                 }
+                PriceField(skin: skin, text: Binding(
+                    get: { priceDrafts[memory.name] ?? ShopStore.priceText(memory.price) },
+                    set: { value in
+                        priceDrafts[memory.name] = value
+                        store.setPrice(memory.name, ShopStore.parsePrice(value))
+                    }))
                 HStack(spacing: 6) {
                     SkinChip(title: memory.remind ? "🔔 напоминать" : "🔕 не напоминать", style: style, filled: memory.remind) {
                         store.toggleRemind(memory.name)
@@ -444,10 +454,11 @@ struct MemoryView: View {
     }
 
     private func shortStatus(_ memory: ItemMemory) -> String {
-        if !memory.remind { return "без напоминаний" }
-        if let days = memory.daysLeft() { return days == 0 ? "пора купить!" : "через \(days) дн" }
-        if let i = memory.interval { return "раз в \(Int(i.rounded())) дн" }
-        return "срок не задан"
+        let price = memory.price.map { " · ~" + ShopStore.rub($0) } ?? ""
+        if !memory.remind { return "без напоминаний" + price }
+        if let days = memory.daysLeft() { return (days == 0 ? "пора купить!" : "через \(days) дн") + price }
+        if let i = memory.interval { return "раз в \(Int(i.rounded())) дн" + price }
+        return "срок не задан" + price
     }
 
     private func change(_ memory: ItemMemory, by step: Double) {
@@ -596,5 +607,37 @@ struct IconChooserButton: View {
             .overlay(RoundedRectangle(cornerRadius: skin == .mac || skin == .winamp ? 0 : 6).stroke(style.rowStroke, lineWidth: 1.5))
         }
         .buttonStyle(SkinPressStyle(skin: skin))
+    }
+}
+
+// MARK: - Поле цены
+
+/// Ввод ориентировочной цены за штуку в стиле скина
+struct PriceField: View {
+    let skin: SkinID
+    @Binding var text: String
+    var qty: Int = 1
+
+    var body: some View {
+        let style = SkinStyle.of(skin)
+        HStack(spacing: 6) {
+            Text("Цена ~").font(style.font(14, .regular)).foregroundStyle(style.text)
+            TextField("", text: $text, prompt: Text("0").foregroundColor(style.secondary))
+                .font(style.font(15, .bold))
+                .foregroundStyle(style.text)
+                .multilineTextAlignment(.trailing)
+                #if os(iOS)
+                .keyboardType(.decimalPad)
+                #endif
+                .padding(.horizontal, 6)
+                .frame(width: 84, height: 36)
+                .background(RoundedRectangle(cornerRadius: 4).fill(style.rowFill))
+                .overlay(RoundedRectangle(cornerRadius: 4).stroke(style.rowStroke, lineWidth: 1.5))
+            Text("₽ за шт").font(style.font(13, .regular)).foregroundStyle(style.secondary)
+            if let v = ShopStore.parsePrice(text), qty > 1 {
+                Text("= " + ShopStore.rub(v * Double(qty))).font(style.font(13, .bold)).foregroundStyle(style.accent)
+            }
+            Spacer(minLength: 0)
+        }
     }
 }

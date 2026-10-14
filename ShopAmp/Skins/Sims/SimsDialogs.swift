@@ -50,6 +50,7 @@ struct SimsAddItemDialog: View {
     @EnvironmentObject var store: ShopStore
     @State private var name = ""
     @State private var qty = 1
+    @State private var priceText = ""
     @FocusState private var focused: Bool
 
     var body: some View {
@@ -101,6 +102,7 @@ struct SimsAddItemDialog: View {
                         .frame(width: 34)
                     SimsRoundButton(symbol: "plus", colors: [Color(hex: 0x9CC0FF), Color(hex: 0x2F62C8)], size: 40) { qty = min(qty + 1, 99) }
                 }
+                PriceField(skin: .sims, text: $priceText, qty: qty)
                 if let item = editing {
                     HStack(spacing: 8) {
                         SimsLink(text: item.bought ? "Не куплено" : "Куплено", color: .white) { toggleBoughtAndClose() }
@@ -115,6 +117,7 @@ struct SimsAddItemDialog: View {
             if let item = store.editingItem {
                 name = item.name
                 qty = item.qty
+                priceText = ShopStore.priceText(store.price(item.name))
             } else {
                 focused = true
             }
@@ -125,7 +128,9 @@ struct SimsAddItemDialog: View {
         if editing != nil { return addAndClose() }
         guard !name.trimmingCharacters(in: .whitespaces).isEmpty else { return close() }
         store.add(name, qty: qty)
+        savePrice()
         name = ""
+        priceText = ""
         qty = 1
         focused = true
     }
@@ -136,6 +141,7 @@ struct SimsAddItemDialog: View {
         } else {
             store.add(name, qty: qty)
         }
+        savePrice()
         close()
     }
 
@@ -143,6 +149,14 @@ struct SimsAddItemDialog: View {
         focused = false
         store.isAdding = false
         store.editingID = nil
+    }
+
+    /// Цена хранится в карточке товара: пустое поле при правке убирает цену
+    private func savePrice() {
+        let clean = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !clean.isEmpty else { return }
+        let value = ShopStore.parsePrice(priceText)
+        if value != nil || editing != nil { store.setPrice(clean, value) }
     }
 
     private var editing: ShopItem? { store.editingItem }

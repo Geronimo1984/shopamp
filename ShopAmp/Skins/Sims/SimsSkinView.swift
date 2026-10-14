@@ -315,7 +315,7 @@ ScrollView(.vertical, showsIndicators: false) {
                     .foregroundStyle(.white)
                     .shadow(color: Color(hex: 0x10285C), radius: 0, x: 1, y: 1)
                 Spacer()
-                StrokedText(text: "В корзине: \(store.boughtCount)!", font: .custom("Georgia", size: 14).weight(.black).italic(),
+                StrokedText(text: store.hasPrices ? "Корзина: \(ShopStore.total(store.cartTotal))!" : "В корзине: \(store.boughtCount)!", font: .custom("Georgia", size: 14).weight(.black).italic(),
                             fill: AnyShapeStyle(Color(hex: 0xE8231A)), stroke: .white, width: 1.3)
                     .rotationEffect(.degrees(-8))
             }
@@ -370,7 +370,7 @@ ScrollView(.vertical, showsIndicators: false) {
                 .foregroundStyle(item.bought ? Sims.ink.opacity(0.5) : (selected ? .white : Sims.ink))
                 .lineLimit(1)
             Spacer(minLength: 4)
-            Text(item.bought ? "✓" : "\(item.qty) шт")
+            Text(item.bought ? "✓" : store.qtyText(item))
                 .font(Sims.verdana(11, .bold))
                 .foregroundStyle(selected ? .white : Sims.ink)
             Button {
@@ -421,7 +421,7 @@ ScrollView(.vertical, showsIndicators: false) {
                 Text(Date(), format: .dateTime.weekday(.wide).day().month(.wide).year())
                     .font(Sims.verdana(12, .bold))
                     .foregroundStyle(Sims.ink)
-                Text("Куплено \(store.boughtCount) из \(store.totalCount)")
+                Text("Куплено \(store.boughtCount) из \(store.totalCount)" + (store.hasPrices ? " · " + store.budgetText : ""))
                     .font(Sims.verdana(11, .bold))
                     .foregroundStyle(Sims.ink)
                 Text("Осталось \(store.leftCount). Купить снова: \(store.dueSuggestions.count). Как часто покупать товары — настраивается в «Памяти».")

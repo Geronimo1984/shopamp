@@ -249,6 +249,10 @@ ScrollView(.vertical, showsIndicators: false) {
             summaryRow("в списке", "\(store.totalCount)")
             summaryRow("куплено", "\(store.boughtCount)")
             summaryRow("осталось", "\(store.leftCount)")
+            if store.hasPrices {
+                summaryRow("корзина", ShopStore.total(store.cartTotal))
+                summaryRow("список", "~" + ShopStore.total(store.listTotal))
+            }
             summaryRow("купить снова", "\(store.dueSuggestions.count)")
             Spacer(minLength: 0)
             XPProgressBar(value: store.totalCount == 0 ? 0 : Double(store.boughtCount) / Double(store.totalCount))
@@ -346,7 +350,7 @@ ScrollView(.vertical, showsIndicators: false) {
                     .foregroundStyle(.white)
                     .strikethrough(item.bought, color: .white)
                     .lineLimit(1)
-                Text(item.bought ? "в корзине ✓" : "\(item.qty) шт")
+                Text(item.bought ? "в корзине ✓" + (store.cost(item).map { " · " + ShopStore.rub($0) } ?? "") : store.qtyText(item))
                     .font(Aero.xp(11, .bold))
                     .foregroundStyle(Aero.welcomeSub)
             }

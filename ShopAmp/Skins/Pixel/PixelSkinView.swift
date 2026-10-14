@@ -211,8 +211,10 @@ ScrollView(.vertical, showsIndicators: false) {
                 Circle().fill(Px.pink).overlay(Circle().stroke(Px.ink, lineWidth: 2)).frame(width: 16, height: 16)
                 HStack {
                     Spacer()
-                    Text("В КОРЗИНЕ \(store.boughtCount)/\(store.totalCount)")
+                    Text("В КОРЗИНЕ \(store.boughtCount)/\(store.totalCount)" + (store.hasPrices ? " · \(Int(store.cartTotal.rounded()))/" + ShopStore.total(store.listTotal) : ""))
                         .font(Px.title(8))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.6)
                         .foregroundStyle(Px.ink)
                 }
                 .padding(.horizontal, 6)
@@ -319,7 +321,9 @@ ScrollView(.vertical, showsIndicators: false) {
                 Text(flavor(item, memory))
                     .font(Px.body(14))
                     .foregroundStyle(Px.pinkLight)
-                Text(item.map { "Восстанавливает \($0.qty * 100) HP" } ?? "")
+                Text(item.map { item in
+                    store.cost(item).map { "Стоит ~\(ShopStore.rub($0)) · +\(item.qty * 100) HP" } ?? "Восстанавливает \(item.qty * 100) HP"
+                } ?? "")
                     .font(Px.body(14))
                     .foregroundStyle(.white)
                 HStack(spacing: 8) {

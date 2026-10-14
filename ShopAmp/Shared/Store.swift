@@ -18,6 +18,8 @@ struct ItemMemory: Codable, Equatable {
     var customInterval: Double? = nil
     /// Показывать ли товар в «Пора купить»
     var remind = true
+    /// Ориентировочная цена за штуку, ₽ (nil — не задана)
+    var price: Double? = nil
 
     init(name: String, purchases: [Date] = []) {
         self.name = name
@@ -30,6 +32,7 @@ struct ItemMemory: Codable, Equatable {
         purchases = try c.decodeIfPresent([Date].self, forKey: .purchases) ?? []
         customInterval = try c.decodeIfPresent(Double.self, forKey: .customInterval)
         remind = try c.decodeIfPresent(Bool.self, forKey: .remind) ?? true
+        price = try c.decodeIfPresent(Double.self, forKey: .price)
     }
 
     var lastPurchase: Date? { purchases.max() }
@@ -615,7 +618,85 @@ extension ShopStore {
         store.add("Куриное филе", qty: 2)
         store.add("Сыр")
         store.setBought(store.state.items.first { $0.name == "Сыр" }?.id, true)
+        // ориентировочные цены для демо (часть товаров без цены)
+        for (name, price) in [("Бананы", 25.0), ("Куриное филе", 389), ("Сыр", 459), ("Молоко", 89.9), ("Хлеб", 55),
+                              ("Яйца", 129), ("Кофе", 690), ("Вода", 45), ("Гречка", 99)] {
+            store.setPrice(name, price)
+        }
         store.selectedID = store.state.items.first { $0.name == "Бананы" }?.id
         return store
+    }
+}
+
+// MARK: - Ориентировочная стоимость
+
+extension ShopStore {
+    /// Цена за штуку из карточки товара
+    func price(_ name: String) -> Double? { state.memory[Self.key(name)]?.price }
+
+    func setPrice(_ name: String, _ value: Double?) {
+        let clean = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !clean.isEmpty else { return }
+        let key = Self.key(clean)
+        var s = state
+        if s.memory[key] == nil { s.memory[key] = ItemMemory(name: clean) }
+        s.memory[key]?.price = value.flatMap { $0 > 0 ? ($0 * 100).rounded() / 100 : nil }
+        state = s
+    }
+
+    /// Стоимость позиции: цена × количество
+    func cost(_ item: ShopItem) -> Double? { price(item.name).map { $0 * Double(item.qty) } }
+
+    /// Сумма купленного в этом походе
+    var cartTotal: Double { state.items.filter(\.bought).compactMap(cost).reduce(0, +) }
+    /// Сколько стоит весь список
+    var listTotal: Double { state.items.compactMap(cost).reduce(0, +) }
+    /// Осталось потратить на некупленное
+    var leftTotal: Double { listTotal - cartTotal }
+    /// Товаров в списке без цены
+    var unpricedCount: Int { state.items.filter { price($0.name) == nil }.count }
+    var hasPrices: Bool { state.items.contains { price($0.name) != nil } }
+
+    /// «89,9 ₽» — цена позиции (с копейками, если они есть)
+    static func rub(_ value: Double) -> String { format(value, kopecks: true) }
+
+    /// «1 651 ₽» — итоги округляются до рубля, чтобы помещаться в табло
+    static func total(_ value: Double) -> String { format(value, kopecks: false) }
+
+    private static func format(_ value: Double, kopecks: Bool) -> String {
+        let f = NumberFormatter()
+        f.locale = Locale(identifier: "ru_RU")
+        f.numberStyle = .decimal
+        f.groupingSeparator = "\u{00A0}"
+        f.maximumFractionDigits = kopecks ? 2 : 0
+        f.minimumFractionDigits = 0
+        return (f.string(from: NSNumber(value: value)) ?? "\(Int(value))") + "\u{00A0}₽"
+    }
+
+    /// «1 240 ₽ из ~2 860 ₽»
+    var budgetText: String {
+        guard hasPrices else { return "цены не заданы" }
+        var text = Self.total(cartTotal) + " из ~" + Self.total(listTotal)
+        if unpricedCount > 0 { text += " (без цены: \(unpricedCount))" }
+        return text
+    }
+
+    /// Подпись позиции: «2 шт · 180 ₽»
+    func qtyText(_ item: ShopItem) -> String {
+        let q = "\(item.qty) шт"
+        guard let c = cost(item) else { return q }
+        return q + " · " + Self.rub(c)
+    }
+
+    /// Разбор цены из поля ввода: «89,90» → 89.9
+    static func parsePrice(_ text: String) -> Double? {
+        let t = text.replacingOccurrences(of: ",", with: ".").filter { $0.isNumber || $0 == "." }
+        guard let v = Double(t), v > 0 else { return nil }
+        return v
+    }
+
+    static func priceText(_ value: Double?) -> String {
+        guard let value else { return "" }
+        return value.rounded() == value ? String(Int(value)) : String(format: "%.2f", value).replacingOccurrences(of: ".", with: ",")
     }
 }

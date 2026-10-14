@@ -5,6 +5,7 @@ struct MacAddItemDialog: View {
     @EnvironmentObject var store: ShopStore
     @State private var name = ""
     @State private var qty = 1
+    @State private var priceText = ""
     @FocusState private var focused: Bool
 
     var body: some View {
@@ -63,6 +64,7 @@ struct MacAddItemDialog: View {
                         }
                     }
 
+                    PriceField(skin: .mac, text: $priceText, qty: qty)
                     if let item = editing {
                         HStack(spacing: 10) {
                             Button(item.bought ? "Не куплено" : "Куплено") { toggleBoughtAndClose() }
@@ -89,6 +91,7 @@ struct MacAddItemDialog: View {
             if let item = store.editingItem {
                 name = item.name
                 qty = item.qty
+                priceText = ShopStore.priceText(store.price(item.name))
             } else {
                 focused = true
             }
@@ -113,7 +116,9 @@ struct MacAddItemDialog: View {
         if editing != nil { return addAndClose() }
         guard !name.trimmingCharacters(in: .whitespaces).isEmpty else { return close() }
         store.add(name, qty: qty)
+        savePrice()
         name = ""
+        priceText = ""
         qty = 1
         focused = true
     }
@@ -124,6 +129,7 @@ struct MacAddItemDialog: View {
         } else {
             store.add(name, qty: qty)
         }
+        savePrice()
         close()
     }
 
@@ -131,6 +137,14 @@ struct MacAddItemDialog: View {
         focused = false
         store.isAdding = false
         store.editingID = nil
+    }
+
+    /// Цена хранится в карточке товара: пустое поле при правке убирает цену
+    private func savePrice() {
+        let clean = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !clean.isEmpty else { return }
+        let value = ShopStore.parsePrice(priceText)
+        if value != nil || editing != nil { store.setPrice(clean, value) }
     }
 
     private var editing: ShopItem? { store.editingItem }

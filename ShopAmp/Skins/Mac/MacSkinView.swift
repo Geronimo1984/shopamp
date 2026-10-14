@@ -361,7 +361,7 @@ ScrollView(.vertical, showsIndicators: false) {
                 .strikethrough(item.bought, color: fg)
                 .lineLimit(1)
             Spacer(minLength: 4)
-            Text("\(item.qty) шт").font(Mac.font(14))
+            Text(store.qtyText(item)).font(Mac.font(14)).lineLimit(1).minimumScaleFactor(0.7)
         }
         .foregroundStyle(fg)
         .padding(.leading, 30)
@@ -464,7 +464,10 @@ ScrollView(.vertical, showsIndicators: false) {
             .foregroundStyle(Mac.paper)
             HStack(spacing: 5) {
                 PixelBitmap(rows: MacIcons.cart).frame(width: 16, height: 12)
-                Text("\(store.leftCount)").font(Mac.font(15, .bold))
+                Text(store.hasPrices ? "\(Int(store.cartTotal.rounded()))/" + ShopStore.total(store.listTotal) : "\(store.leftCount)")
+                    .font(Mac.font(15, .bold))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
             }
             Spacer()
             TimelineView(.periodic(from: .now, by: 15)) { context in
