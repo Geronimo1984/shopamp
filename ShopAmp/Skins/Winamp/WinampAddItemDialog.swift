@@ -70,6 +70,8 @@ struct WinampAddItemDialog: View {
                     }
 
                     PriceField(skin: .winamp, text: $priceText, qty: qty)
+
+                    CategoryChip(skin: .winamp, name: name)
                     if let item = editing {
                         HStack(spacing: 10) {
                             SkinButton(edge: 1.5) { toggleBoughtAndClose() } label: {

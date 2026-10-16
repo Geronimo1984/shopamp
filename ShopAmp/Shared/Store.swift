@@ -20,6 +20,8 @@ struct ItemMemory: Codable, Equatable {
     var remind = true
     /// Ориентировочная цена за штуку, ₽ (nil — не задана)
     var price: Double? = nil
+    /// Отдел магазина, выбранный вручную (nil — по названию)
+    var category: String? = nil
 
     init(name: String, purchases: [Date] = []) {
         self.name = name
@@ -33,6 +35,7 @@ struct ItemMemory: Codable, Equatable {
         customInterval = try c.decodeIfPresent(Double.self, forKey: .customInterval)
         remind = try c.decodeIfPresent(Bool.self, forKey: .remind) ?? true
         price = try c.decodeIfPresent(Double.self, forKey: .price)
+        category = try c.decodeIfPresent(String.self, forKey: .category)
     }
 
     var lastPurchase: Date? { purchases.max() }
@@ -80,6 +83,8 @@ struct SavedState: Codable {
     var autoSuggest = true
     var autoAdd = false
     var sortBought = false
+    /// Список сгруппирован по отделам магазина
+    var groupByCategory = true
     var showEqualizer = false
     var showPlaylist = true
     var skin: SkinID = .winamp
@@ -101,6 +106,7 @@ struct SavedState: Codable {
         autoSuggest = try c.decodeIfPresent(Bool.self, forKey: .autoSuggest) ?? true
         autoAdd = try c.decodeIfPresent(Bool.self, forKey: .autoAdd) ?? false
         sortBought = try c.decodeIfPresent(Bool.self, forKey: .sortBought) ?? false
+        groupByCategory = try c.decodeIfPresent(Bool.self, forKey: .groupByCategory) ?? true
         showEqualizer = try c.decodeIfPresent(Bool.self, forKey: .showEqualizer) ?? false
         showPlaylist = try c.decodeIfPresent(Bool.self, forKey: .showPlaylist) ?? true
         skin = (try? c.decodeIfPresent(SkinID.self, forKey: .skin)) ?? .winamp
@@ -259,9 +265,17 @@ final class ShopStore: ObservableObject {
 
     // MARK: - Чтение
 
+    /// Порядок списка: по отделам магазина (если включено), внутри — купленное в конец (если включено), иначе как добавляли
     var displayItems: [ShopItem] {
-        guard state.sortBought else { return state.items }
-        return state.items.filter { !$0.bought } + state.items.filter { $0.bought }
+        let indexed = Array(state.items.enumerated())
+        let group = state.groupByCategory, bought = state.sortBought
+        guard group || bought else { return state.items }
+        let cats = group ? Dictionary(uniqueKeysWithValues: state.items.map { ($0.id, category($0.name).order) }) : [:]
+        return indexed.sorted { a, b in
+            if group, cats[a.element.id] != cats[b.element.id] { return (cats[a.element.id] ?? 0) < (cats[b.element.id] ?? 0) }
+            if bought, a.element.bought != b.element.bought { return !a.element.bought }
+            return a.offset < b.offset
+        }.map(\.element)
     }
 
     var boughtCount: Int { state.items.filter(\.bought).count }
@@ -370,6 +384,9 @@ final class ShopStore: ObservableObject {
             MenuAction(title: "Новый поход (список по срокам)") { [weak self] in self?.startNewTrip() },
             MenuAction(title: state.sortBought ? "Не сортировать купленное" : "Купленное — в конец") { [weak self] in
                 self?.toggle(\.sortBought)
+            },
+            MenuAction(title: state.groupByCategory ? "Не группировать по отделам" : "Группировать по отделам") { [weak self] in
+                self?.toggle(\.groupByCategory)
             },
             MenuAction(title: "Сменить скин…") { [weak self] in self?.isChoosingSkin = true },
             MenuAction(title: "Справка") { [weak self] in self?.showHelp = true },

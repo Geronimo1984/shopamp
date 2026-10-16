@@ -327,8 +327,10 @@ ScrollView(.vertical, showsIndicators: false) {
                     .font(Sims.verdana(11, .bold))
                     .foregroundStyle(Sims.ink)
             }
-            ForEach(store.displayItems) { item in
-                itemRow(item).assistAnchor("list", when: item.id == store.displayItems.first?.id)
+            let items = store.displayItems
+            ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
+                if let cat = store.categoryHeader(items, at: index) { CategoryHeader(skin: .sims, category: cat) }
+                itemRow(item).assistAnchor("list", when: item.id == items.first?.id)
             }
             HStack {
                 linkYellow("+ Добавить из карточек") { store.isEditingMemory = true }

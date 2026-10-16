@@ -65,6 +65,8 @@ struct MacAddItemDialog: View {
                     }
 
                     PriceField(skin: .mac, text: $priceText, qty: qty)
+
+                    CategoryChip(skin: .mac, name: name)
                     if let item = editing {
                         HStack(spacing: 10) {
                             Button(item.bought ? "Не куплено" : "Куплено") { toggleBoughtAndClose() }

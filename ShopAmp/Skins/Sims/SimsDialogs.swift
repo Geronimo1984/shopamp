@@ -103,6 +103,7 @@ struct SimsAddItemDialog: View {
                     SimsRoundButton(symbol: "plus", colors: [Color(hex: 0x9CC0FF), Color(hex: 0x2F62C8)], size: 40) { qty = min(qty + 1, 99) }
                 }
                 PriceField(skin: .sims, text: $priceText, qty: qty)
+                CategoryChip(skin: .sims, name: name)
                 if let item = editing {
                     HStack(spacing: 8) {
                         SimsLink(text: item.bought ? "Не куплено" : "Куплено", color: .white) { toggleBoughtAndClose() }

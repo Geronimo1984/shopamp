@@ -181,6 +181,23 @@ ScrollView(.vertical, showsIndicators: false) {
             .padding(.bottom, 6)
             .assistAnchor("tabs")
 
+            if tab != .due && store.state.groupByCategory && !tabItems.isEmpty {
+                // по отделам: заголовок и ряд ячеек на каждый отдел
+                let items = tabItems
+                VStack(alignment: .leading, spacing: 4) {
+                    ForEach(ShopCategory.allCases) { cat in
+                        let group = items.filter { store.category($0.name) == cat }
+                        if !group.isEmpty {
+                            CategoryHeader(skin: .pixel, category: cat, count: group.count)
+                            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 5), spacing: 6) {
+                                ForEach(group) { slot($0) }
+                            }
+                        }
+                    }
+                }
+                .padding(.horizontal, 8)
+                .assistAnchor("inventory")
+            } else {
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 5), spacing: 6) {
                 if tab == .due {
                     ForEach(store.dueSuggestions, id: \.name) { memory in
@@ -197,6 +214,7 @@ ScrollView(.vertical, showsIndicators: false) {
             }
             .padding(.horizontal, 8)
             .assistAnchor("inventory")
+            }
 
             if tab == .due {
                 Button("НАСТРОИТЬ «КУПИТЬ СНОВА»") {

@@ -332,7 +332,9 @@ ScrollView(.vertical, showsIndicators: false) {
                     .foregroundStyle(.white)
                     .padding(8)
             }
-            ForEach(filteredItems) { item in
+            let items = filteredItems
+            ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
+                if let cat = store.categoryHeader(items, at: index) { CategoryHeader(skin: .aero, category: cat) }
                 listRow(item)
             }
         }

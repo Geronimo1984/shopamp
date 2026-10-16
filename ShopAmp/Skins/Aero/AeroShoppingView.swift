@@ -313,6 +313,12 @@ struct AeroShoppingView: View {
         return HStack(spacing: 10) {
             ProductTile(name: item.name, size: 46, dimmed: item.bought)
             VStack(alignment: .leading, spacing: 4) {
+                if store.state.groupByCategory {
+                    Text(store.category(item.name).label)
+                        .font(Aero.xp(10, .bold))
+                        .foregroundStyle(Aero.welcomeSub)
+                        .lineLimit(1)
+                }
                 Text(item.name)
                     .font(Aero.xp(19))
                     .foregroundStyle(.white)

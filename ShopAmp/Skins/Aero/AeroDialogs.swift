@@ -70,6 +70,8 @@ struct AeroAddItemDialog: View {
                     }
 
                     PriceField(skin: .aero, text: $priceText, qty: qty)
+
+                    CategoryChip(skin: .aero, name: name)
                     if let item = editing {
                         HStack(spacing: 8) {
                             Button(item.bought ? "Не куплено" : "Куплено") { toggleBoughtAndClose() }

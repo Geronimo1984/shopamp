@@ -103,6 +103,7 @@ struct PixelAddItemDialog: View {
                     Button("+") { qty = min(qty + 1, 99) }.buttonStyle(PixelButtonStyle(fill: .white, text: Px.ink))
                 }
                 PriceField(skin: .pixel, text: $priceText, qty: qty)
+                CategoryChip(skin: .pixel, name: name)
                 if let item = editing {
                     HStack(spacing: 10) {
                         Button(item.bought ? "ВЕРНУТЬ" : "В РЮКЗАК ✓") { toggleBoughtAndClose() }

@@ -288,7 +288,12 @@ ScrollView(.vertical, showsIndicators: false) {
                         VStack(alignment: .leading, spacing: 0) {
                             folderRow("Купить", count: buy.count, open: $openBuy)
                             if openBuy {
-                                ForEach(buy) { itemRow($0) }
+                                ForEach(Array(buy.enumerated()), id: \.element.id) { index, item in
+                                    if let cat = store.categoryHeader(buy, at: index) {
+                                        CategoryHeader(skin: .mac, category: cat).padding(.leading, 24)
+                                    }
+                                    itemRow(item)
+                                }
                             }
                             folderRow("В корзине", count: cart.count, open: $openCart)
                             if openCart {

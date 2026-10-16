@@ -37,7 +37,12 @@ struct PlaylistWindow: View {
         ScrollViewReader { proxy in
             ScrollView(.vertical, showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 0) {
-                    ForEach(Array(store.displayItems.enumerated()), id: \.element.id) { index, item in
+                    let items = store.displayItems
+                    ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
+                        if let cat = store.categoryHeader(items, at: index) {
+                            CategoryHeader(skin: .winamp, category: cat)
+                                .font(.custom("Arial", size: fontSize * 0.7))
+                        }
                         row(index: index, item: item)
                             .id(item.id)
                     }
