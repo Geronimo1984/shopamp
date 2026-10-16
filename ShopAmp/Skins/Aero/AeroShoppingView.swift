@@ -117,6 +117,26 @@ struct AeroShoppingView: View {
                 .frame(maxWidth: .infinity, alignment: .trailing)
                 .multilineTextAlignment(.trailing)
                 .foregroundStyle(.white.opacity(0.95))
+            if store.state.groupByCategory, !done, let current = currentCategory {
+                // отдел товара по центру барабана — где вы сейчас в магазине
+                VStack(alignment: .trailing, spacing: 2) {
+                    Text("отдел")
+                        .font(Aero.xp(11, .bold))
+                        .foregroundStyle(Aero.welcomeSub)
+                    Text(current.emoji)
+                        .font(.system(size: 22))
+                    Text(current.title)
+                        .font(Aero.xp(13, .bold))
+                        .foregroundStyle(.white)
+                        .multilineTextAlignment(.trailing)
+                        .minimumScaleFactor(0.8)
+                }
+                .frame(maxWidth: .infinity, alignment: .trailing)
+                .padding(.vertical, 6)
+                .id(current)
+                .transition(.opacity)
+                .animation(.easeInOut(duration: 0.2), value: current)
+            }
             Text("\(store.boughtCount) из \(store.totalCount) в корзине")
                 .font(Aero.xp(11, .bold))
                 .foregroundStyle(Aero.welcomeSub)
@@ -141,6 +161,12 @@ struct AeroShoppingView: View {
         .padding(.leading, 8)
         .padding(.trailing, 10)
         .frame(maxWidth: .infinity, alignment: .trailing)
+    }
+
+    /// Отдел выбранного товара
+    private var currentCategory: ShopCategory? {
+        guard let item = store.displayItems.first(where: { $0.id == store.selectedID }) ?? store.displayItems.first else { return nil }
+        return store.category(item.name)
     }
 
     // MARK: Список-барабан
@@ -313,12 +339,6 @@ struct AeroShoppingView: View {
         return HStack(spacing: 10) {
             ProductTile(name: item.name, size: 46, dimmed: item.bought)
             VStack(alignment: .leading, spacing: 4) {
-                if store.state.groupByCategory {
-                    Text(store.category(item.name).label)
-                        .font(Aero.xp(10, .bold))
-                        .foregroundStyle(Aero.welcomeSub)
-                        .lineLimit(1)
-                }
                 Text(item.name)
                     .font(Aero.xp(19))
                     .foregroundStyle(.white)
