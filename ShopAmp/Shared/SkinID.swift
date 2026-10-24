@@ -87,20 +87,11 @@ struct SkinBadge: View {
 /// Корневой экран: показывает выбранный скин. Данные и логика общие для всех скинов.
 struct ContentView: View {
     @EnvironmentObject var store: ShopStore
+    @StateObject private var keyboard = KeyboardWatcher()
 
     var body: some View {
         skinView
             .preferredColorScheme(store.state.skin.isLight ? .light : .dark)
-            .overlay(alignment: .bottom) {
-                if let toast = store.toast {
-                    ToastView(text: toast, skin: store.state.skin)
-                        .padding(.horizontal, 20)
-                        .padding(.bottom, 70)
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
-                        .onTapGesture { store.toast = nil }
-                }
-            }
-            .animation(.spring(response: 0.35, dampingFraction: 0.8), value: store.toast)
             .overlayPreferenceValue(AssistAnchorKey.self) { anchors in
                 GeometryReader { proxy in
                     AssistantLayer(anchors: anchors.mapValues { proxy[$0] }, size: proxy.size)
@@ -127,6 +118,38 @@ struct ContentView: View {
                     IconPickerView(skin: store.state.skin, name: name)
                 }
             }
+            .overlay {
+                // у цифровой клавиатуры и поля рецепта нет кнопки «Ввод» — закрыть клавиатуру можно здесь
+                if keyboard.height > 0 {
+                    VStack {
+                        Spacer()
+                        HStack {
+                            Spacer()
+                            SkinChip(title: "Готово ⌄", style: SkinStyle.of(store.state.skin), filled: true) { KeyboardWatcher.hide() }
+                        }
+                        .padding(.horizontal, 10)
+                        .padding(.bottom, keyboard.height + 6)
+                    }
+                    .ignoresSafeArea()
+                    .transition(.opacity)
+                }
+            }
+            // сообщения — поверх всех окон (иначе их закрывает затемнение открытого окна)
+            .overlay {
+                VStack {
+                    Spacer()
+                    if let toast = store.toast {
+                        ToastView(text: toast, skin: store.state.skin)
+                            .padding(.horizontal, 20)
+                            .padding(.bottom, keyboard.height > 0 ? keyboard.height + 60 : 70)
+                            .transition(.move(edge: .bottom).combined(with: .opacity))
+                            .onTapGesture { store.toast = nil }
+                    }
+                }
+                // отступ от клавиатуры считается вручную
+                .ignoresSafeArea(.keyboard)
+            }
+            .animation(.spring(response: 0.35, dampingFraction: 0.8), value: store.toast)
             .onAppear {
                 if !store.state.seenHelp { store.showHelp = true }
             }

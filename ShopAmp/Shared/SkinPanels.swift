@@ -27,7 +27,7 @@ struct SkinStyle {
                              rowFill: Mac.paper, rowStroke: Mac.ink)
         case .sims:
             return SkinStyle(font: { Sims.font($0 - 2, $1) }, text: .white,
-                             secondary: Color(hex: 0xDCE7FF), accent: Sims.link,
+                             secondary: Color(hex: 0x1F3C78), accent: Sims.link,
                              rowFill: Color.white.opacity(0.12), rowStroke: Sims.panelBorder, onAccent: Sims.ink)
         case .pixel:
             return SkinStyle(font: { Px.body($0, $1) }, text: Px.navy,
@@ -200,7 +200,7 @@ enum HelpContent {
         "Изменить товар — нажмите на товар, потом нажмите на него ещё раз: откроется карточка с названием, количеством, «Куплено» и «Удалить». Или кнопка «Изменить» / ✎.",
         "Долгое нажатие на товар — короткое меню товара.",
         "Отделы: у каждого товара есть отдел магазина («Овощи и фрукты», «Молочка и сыры», «Орехи и снеки»…) — он подбирается по названию, сменить можно в карточке или в окне товара. Список покупок идёт по отделам, удобно набирать корзину, проходя магазин. Выключить — меню → «Не группировать по отделам».",
-        "Блюда и рецепты (меню → «Блюда и рецепты…» или «🍲 Блюда» в карточках): соберите блюдо из карточек или из списка покупок, добавьте заметку или рецепт. У каждого продукта видно: ✓ — в корзине, • — в списке, + — не хватает; «+ В список» добавит всё сразу. Меню → «Список по блюдам» — список и корзина разложены по блюдам, нажатие на заголовок блюда открывает рецепт.",
+        "Блюда и рецепты (меню → «Блюда и рецепты…» или «🍲 Блюда» в карточках): соберите блюдо из карточек или из списка покупок, добавьте заметку или рецепт. У каждого продукта видно: ✓ — в корзине, • — в списке, + — не хватает; «+ В список» добавит недостающее в список, «🛒 Всё в корзину» — сразу отметит все продукты блюда купленными. Меню → «Список по блюдам» — список и корзина разложены по блюдам, нажатие на заголовок блюда открывает рецепт.",
         "Ориентировочная цена за штуку задаётся в карточке товара или в окне товара («Цена ~»). Сумма корзины — купленное в этом походе, рядом — сколько стоит весь список. Цена запоминается в карточке и подставляется в следующие походы.",
         "Купленное никогда не удаляется само: оно зачёркнуто и остаётся в списке. Снять все отметки — меню → «Новый поход». Удалить товар — только кнопкой «Удалить».",
         "«Купить снова» — товары, которые вы покупаете регулярно и которые, по расчёту, уже заканчиваются. Для каждого товара можно задать «раз в N дней» в окне «Купить снова» (меню → «Настроить «Купить снова»…»). Без настройки интервал считается сам после покупок в 2 разных дня.",
@@ -317,9 +317,16 @@ struct MemoryView: View {
                         .overlay(RoundedRectangle(cornerRadius: 4).stroke(style.rowStroke, lineWidth: 1.5))
                         .focused($searchFocused)
                         .submitLabel(.done)
+                        .onAppear {
+                            // для скриншота клавиатуры: -kbd
+                            if ProcessInfo.processInfo.arguments.contains("-kbd") {
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { searchFocused = true }
+                            }
+                        }
                         .onSubmit { if !query.isEmpty && !exists { createCard() } }
                 }
                 // создание новой карточки: из того, что введено в поле, или фокус на поле
+                HStack(spacing: 6) {
                 SkinChip(title: !query.isEmpty && !exists ? "+ Новая карточка «\(search.trimmingCharacters(in: .whitespaces))»" : "+ Новая карточка",
                          style: style, filled: true) {
                     if !query.isEmpty && !exists {
@@ -330,9 +337,9 @@ struct MemoryView: View {
                         store.notify("Введите название новой карточки в поле поиска")
                     }
                 }
-                HStack(spacing: 6) {
-                    SkinChip(title: "🍲 Блюда (\(store.state.dishes.count))", style: style) { store.openDishes() }
-                    Spacer(minLength: 0)
+                .layoutPriority(1)
+                SkinChip(title: "🍲 Блюда (\(store.state.dishes.count))", style: style) { store.openDishes() }
+                Spacer(minLength: 0)
                 }
                 HStack(spacing: 6) {
                     SkinChip(title: "Все (\(store.cards.count))", style: style, filled: !showDueOnly) { showDueOnly = false }
@@ -535,7 +542,7 @@ struct IconPickerView: View {
             store.iconPickerName = nil
         } label: {
             ZStack(alignment: .bottom) {
-                cellBackground(selected: selected, style: style)
+                SkinTileBackground(skin: skin, selected: selected)
                 ProductImage(name: name, size: 40, pixelated: skin == .pixel, asset: asset)
                     .grayscale(skin == .mac ? 1 : 0)
                     .contrast(skin == .mac ? 1.4 : 1)
@@ -554,8 +561,14 @@ struct IconPickerView: View {
         .buttonStyle(SkinPressStyle(skin: skin))
     }
 
-    @ViewBuilder
-    private func cellBackground(selected: Bool, style: SkinStyle) -> some View {
+}
+
+/// Фон плитки выбора (иконка товара, картинка блюда, продукт) в стиле скина
+struct SkinTileBackground: View {
+    let skin: SkinID
+    let selected: Bool
+
+    var body: some View {
         switch skin {
         case .pixel:
             ZStack {

@@ -9,7 +9,8 @@ struct Dish: Identifiable, Codable, Equatable {
     var ingredients: [String] = []
     var note: String = ""
 
-    static let emojis = ["🍲", "🥗", "🍝", "🍳", "🥘", "🍛", "🍜", "🥪", "🍕", "🌮", "🥞", "🍰", "🍣", "🍖", "🥣", "🍹"]
+    static let emojis = ["🍲", "🥗", "🍝", "🍳", "🥘", "🍛", "🍜", "🥪", "🍕", "🌮", "🌯", "🥙", "🍔", "🌭", "🥞", "🧇",
+                         "🍰", "🧁", "🥧", "🍪", "🍣", "🍱", "🥟", "🍤", "🍖", "🍗", "🥩", "🐟", "🥣", "🫕", "🥐", "🍹"]
 }
 
 /// Раздел списка покупок: отдел магазина или блюдо
@@ -156,6 +157,23 @@ extension ShopStore {
         notify("В список добавлено для «\(dish.name)»: " + missing.joined(separator: ", "))
     }
 
+    /// Все продукты блюда — сразу в корзину (купленными); недостающие сначала попадают в список
+    func putDishInCart(_ id: UUID) {
+        guard let dish = state.dishes.first(where: { $0.id == id }) else { return }
+        var moved: [String] = []
+        for name in dish.ingredients where status(ofIngredient: name) != .bought {
+            let key = Self.key(name)
+            if !state.items.contains(where: { !$0.bought && Self.key($0.name) == key }) { add(name) }
+            if let item = state.items.first(where: { !$0.bought && Self.key($0.name) == key }) {
+                setBought(item.id, true)
+                moved.append(name)
+            }
+        }
+        notify(moved.isEmpty
+               ? "Для «\(dish.name)» всё уже в корзине"
+               : "В корзину для «\(dish.name)»: " + moved.joined(separator: ", "))
+    }
+
     func newDish(fromList: Bool = false) {
         let names = fromList ? state.items.filter { !$0.bought }.map(\.name) : []
         editingDish = Dish(name: "", ingredients: names)
@@ -164,13 +182,6 @@ extension ShopStore {
     func openDishes(_ id: UUID? = nil) {
         openDishID = id
         isViewingDishes = true
-    }
-
-    /// Выбор картинки блюда — меню в стиле скина
-    func chooseDishEmoji(current: String, onPick: @escaping (String) -> Void) {
-        menu = SkinMenu(title: "Картинка блюда", actions: Dish.emojis.map { e in
-            MenuAction(title: (e == current ? "✓ " : "") + e) { onPick(e) }
-        })
     }
 
     func toggleGroupByDish() {
@@ -293,9 +304,12 @@ private struct DishRow: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .overlay(RoundedRectangle(cornerRadius: 4).stroke(style.rowStroke.opacity(0.6), style: StrokeStyle(lineWidth: 1, dash: [4, 3])))
                 }
+                let notInCart = dish.ingredients.filter { store.status(ofIngredient: $0) != .bought }.count
                 FlowLayout(spacing: 6, lineSpacing: 6) {
+                    SkinChip(title: notInCart > 0 ? "🛒 Всё в корзину (\(notInCart))" : "🛒 Всё в корзине ✓",
+                             style: style, filled: notInCart > 0) { store.putDishInCart(dish.id) }
                     SkinChip(title: missing > 0 ? "+ В список (\(missing))" : "Всё в списке ✓",
-                             style: style, filled: missing > 0) { store.addDishToList(dish.id) }
+                             style: style) { store.addDishToList(dish.id) }
                     SkinChip(title: "Изменить", style: style) { store.editingDish = dish }
                     SkinChip(title: "Удалить", style: style) { store.deleteDish(dish.id) }
                 }
@@ -363,22 +377,30 @@ struct DishEditorView: View {
         let style = SkinStyle.of(skin)
         SkinChrome(title: isNew ? "Новое блюдо" : "Блюдо", skin: skin, onClose: { store.editingDish = nil }) {
             VStack(alignment: .leading, spacing: 8) {
+                ScrollViewReader { proxy in
                 ScrollView(.vertical, showsIndicators: true) {
                     VStack(alignment: .leading, spacing: 10) {
-                        HStack(spacing: 6) {
-                            Button {
-                                Haptics.tap()
-                                store.chooseDishEmoji(current: draft.emoji) { draft.emoji = $0 }
-                            } label: {
-                                Text(draft.emoji)
-                                    .font(.system(size: 30))
-                                    .frame(width: 44, height: 40)
-                                    .background(RoundedRectangle(cornerRadius: 4).fill(style.rowFill))
-                                    .overlay(RoundedRectangle(cornerRadius: 4).stroke(style.rowStroke, lineWidth: 1.5))
+                        field(TextField("", text: $draft.name, prompt: Text("Название, например «Салат с фетой»").foregroundColor(style.secondary)), style)
+                        Text("Картинка блюда")
+                            .font(style.font(13, .bold))
+                            .foregroundStyle(style.text)
+                        // плитка картинок, выбранная — в рамке
+                        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 8), spacing: 6) {
+                            ForEach(Dish.emojis, id: \.self) { e in
+                                Button {
+                                    Haptics.tap()
+                                    draft.emoji = e
+                                } label: {
+                                    ZStack {
+                                        SkinTileBackground(skin: skin, selected: e == draft.emoji)
+                                        Text(e).font(.system(size: 22))
+                                    }
+                                    .aspectRatio(1, contentMode: .fit)
+                                }
+                                .buttonStyle(SkinPressStyle(skin: skin))
                             }
-                            .buttonStyle(SkinPressStyle(skin: skin))
-                            field(TextField("", text: $draft.name, prompt: Text("Название, например «Салат с фетой»").foregroundColor(style.secondary)), style)
                         }
+                        .padding(2)
                         Text("Заметка или рецепт")
                             .font(style.font(13, .bold))
                             .foregroundStyle(style.text)
@@ -413,11 +435,20 @@ struct DishEditorView: View {
                                 }
                             }
                         }
-                        picker(style)
+                        picker(style).id("picker")
                     }
                     .padding(2)
                 }
                 .frame(maxHeight: 520)
+                .scrollDismissesKeyboard(.interactively)
+                .onAppear {
+                    // для скриншота плитки продуктов: -dishpick
+                    if ProcessInfo.processInfo.arguments.contains("-dishpick") {
+                        fromList = false
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { proxy.scrollTo("picker", anchor: .top) }
+                    }
+                }
+                }
                 HStack(spacing: 6) {
                     SkinChip(title: "Отмена", style: style) { store.editingDish = nil }
                     Spacer(minLength: 0)
@@ -449,40 +480,63 @@ struct DishEditorView: View {
             field(TextField("", text: $search, prompt: Text("Найти карточку").foregroundColor(style.secondary)), style)
         }
         let names = candidates
-        LazyVStack(spacing: 4) {
+        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 4), spacing: 6) {
             ForEach(names, id: \.self) { name in
-                let on = contains(name)
-                Button {
-                    Haptics.tap()
-                    toggle(name)
-                } label: {
-                    HStack(spacing: 8) {
-                        Image(systemName: on ? "checkmark.square.fill" : "square")
-                            .font(.system(size: 20, weight: .semibold))
-                            .foregroundStyle(on ? style.accent : style.secondary)
-                        ProductImage(name: name, size: 24, pixelated: skin == .pixel)
-                            .grayscale(skin == .mac ? 1 : 0)
-                        Text(name)
-                            .font(style.font(14, .semibold))
-                            .foregroundStyle(style.text)
-                            .lineLimit(1)
-                        Spacer(minLength: 0)
-                        Text(store.category(name).emoji).font(.system(size: 12))
-                    }
-                    .padding(.horizontal, 6)
-                    .frame(minHeight: 38)
-                    .background(RoundedRectangle(cornerRadius: 4).fill(style.rowFill))
-                    .overlay(RoundedRectangle(cornerRadius: 4).stroke(on ? style.accent : style.rowStroke, lineWidth: on ? 2 : 1))
-                    .contentShape(Rectangle())
-                }
-                .buttonStyle(SkinPressStyle(skin: skin))
+                productTile(name, style)
             }
+        }
+        VStack {
             if names.isEmpty {
                 Text(fromList ? "Список покупок пуст — выберите «Все карточки»" : "Не найдено")
                     .font(style.font(13, .regular))
                     .foregroundStyle(style.secondary)
                     .padding(6)
             }
+        }
+    }
+
+    /// Плитка продукта: картинка, название, отметка ✓ у выбранного
+    private func productTile(_ name: String, _ style: SkinStyle) -> some View {
+        let on = contains(name)
+        return Button {
+            Haptics.tap()
+            toggle(name)
+        } label: {
+            ZStack(alignment: .topTrailing) {
+                SkinTileBackground(skin: skin, selected: on)
+                VStack(spacing: 3) {
+                    ProductImage(name: name, size: 34, pixelated: skin == .pixel)
+                        .grayscale(skin == .mac ? 1 : 0)
+                        .contrast(skin == .mac ? 1.4 : 1)
+                    Text(name)
+                        .font(style.font(10, .semibold))
+                        .foregroundStyle(tileInk(style))
+                        .multilineTextAlignment(.center)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.8)
+                        .frame(maxWidth: .infinity)
+                }
+                .padding(.horizontal, 3)
+                .padding(.vertical, 6)
+                if on {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundStyle(.white, style.accent)
+                        .padding(3)
+                }
+            }
+            .frame(height: 78)
+        }
+        .buttonStyle(SkinPressStyle(skin: skin))
+    }
+
+    /// Текст на плитке: фон плитки у части скинов светлый, у Winamp — чёрный
+    private func tileInk(_ style: SkinStyle) -> Color {
+        switch skin {
+        case .aero: return .black
+        case .winamp: return Winamp.listGreen
+        case .sims: return .white
+        default: return style.text
         }
     }
 

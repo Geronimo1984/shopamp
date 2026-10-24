@@ -512,7 +512,10 @@ final class ShopStore: ObservableObject {
         s.items[i].qty = min(max(qty, 1), 99)
         let key = Self.key(name)
         if s.memory[key] == nil {
-            s.memory[key] = ItemMemory(name: name)
+            // переименование: новая карточка получает отдел, выбранный у старой
+            var memory = ItemMemory(name: name)
+            memory.category = s.memory[oldKey]?.category
+            s.memory[key] = memory
         }
         state = s
     }

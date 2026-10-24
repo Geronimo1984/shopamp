@@ -123,6 +123,8 @@ struct CategoryHeader: View {
                 .font(style.font(skin == .pixel ? 12 : 13, .bold))
                 .foregroundStyle(headerInk(style))
                 .lineLimit(1)
+                .minimumScaleFactor(0.8)
+                .layoutPriority(1)
             if let count { Text("\(count)").font(style.font(11, .regular)).foregroundStyle(style.secondary) }
             Rectangle().fill(headerInk(style).opacity(0.35)).frame(height: 1)
             if let id = section.dishID {

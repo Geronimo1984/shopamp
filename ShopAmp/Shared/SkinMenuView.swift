@@ -13,6 +13,16 @@ struct SkinMenuView: View {
                 .onTapGesture { store.menu = nil }
             content
                 .padding(.horizontal, 24)
+                .padding(.vertical, 28)
+        }
+    }
+
+    /// Пункты меню целиком, а если не помещаются по высоте — с прокруткой
+    private func fitting<Items: View>(@ViewBuilder _ items: () -> Items) -> some View {
+        let list = items()
+        return ViewThatFits(in: .vertical) {
+            list
+            ScrollView(.vertical, showsIndicators: true) { list }
         }
     }
 
@@ -22,7 +32,7 @@ struct SkinMenuView: View {
         case .winamp: winamp
         case .aero: aero
         case .mac: mac
-        case .sims: simsPie
+        case .sims: if menu.actions.count > 8 { simsList } else { simsPie }
         case .pixel: pixel
         }
     }
@@ -38,6 +48,7 @@ struct SkinMenuView: View {
         VStack(spacing: 0) {
             TitleBar(title: menu.title.uppercased(), showIcon: false, buttons: [.close]) { store.menu = nil }
                 .frame(height: 26)
+            fitting {
             VStack(alignment: .leading, spacing: 0) {
                 ForEach(menu.actions) { action in
                     Text(action.title)
@@ -51,6 +62,7 @@ struct SkinMenuView: View {
                 }
             }
             .padding(.vertical, 4)
+            }
             .background(Color.black)
             .overlay(Rectangle().strokeBorder(Winamp.frameDark, lineWidth: 2))
             .padding(10)
@@ -87,16 +99,21 @@ struct SkinMenuView: View {
             .frame(height: 42)
             .background(LinearGradient(colors: Aero.lunaTitle, startPoint: .top, endPoint: .bottom))
 
+            fitting {
             VStack(spacing: 0) {
                 ForEach(Array(menu.actions.enumerated()), id: \.element.id) { index, action in
                     if index > 0 {
                         Rectangle().fill(Color(hex: 0xD5DCE8)).frame(height: 1).padding(.leading, 44)
                     }
                     HStack(spacing: 0) {
-                        Image(systemName: aeroIcon(action.title))
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundStyle(action.destructive ? Color(hex: 0xC8391B) : Color(hex: 0x2A5CCB))
-                            .frame(width: 44)
+                        Group {
+                            if let icon = aeroIcon(action.title) {
+                                Image(systemName: icon)
+                                    .font(.system(size: 16, weight: .semibold))
+                                    .foregroundStyle(action.destructive ? Color(hex: 0xC8391B) : Color(hex: 0x2A5CCB))
+                            }
+                        }
+                        .frame(width: 44)
                         Text(action.title)
                             .font(Aero.xp(16))
                             .foregroundStyle(action.destructive ? Color(hex: 0xC8261A) : .black)
@@ -115,6 +132,7 @@ struct SkinMenuView: View {
                 }
             }
             .padding(.vertical, 4)
+            }
             .background(Color.white)
         }
         .clipShape(RoundedRectangle(cornerRadius: 6))
@@ -124,8 +142,12 @@ struct SkinMenuView: View {
         .environment(\.colorScheme, .light)
     }
 
-    private func aeroIcon(_ title: String) -> String {
+    private func aeroIcon(_ title: String) -> String? {
         let t = title.lowercased()
+        if t.contains("блюд") { return "fork.knife" }
+        if t.contains("отдел") { return "square.grid.2x2" }
+        if t.contains("подобрать") { return "rectangle.stack" }
+        if t.contains("новый поход") { return "cart" }
         if t.contains("изменить") { return "pencil" }
         if t.contains("добавить") { return "arrow.clockwise" }
         if t.contains("настроить") { return "gearshape" }
@@ -137,13 +159,15 @@ struct SkinMenuView: View {
         if t.contains("куплено") { return "checkmark" }
         if t.contains("+1") { return "plus" }
         if t.contains("−1") { return "minus" }
-        return "circle"
+        if t.contains("отмена") { return "xmark" }
+        return nil
     }
 
     // MARK: Mac — 1-битное выпадающее меню
 
     private var mac: some View {
         MacWindow(title: menu.title, onClose: { store.menu = nil }) {
+            fitting {
             VStack(alignment: .leading, spacing: 0) {
                 ForEach(Array(menu.actions.enumerated()), id: \.element.id) { index, action in
                     if index > 0 {
@@ -160,6 +184,7 @@ struct SkinMenuView: View {
                 }
             }
             .padding(.vertical, 4)
+            }
         }
         .frame(maxWidth: 360)
     }
@@ -205,6 +230,48 @@ struct SkinMenuView: View {
         .frame(height: 320)
     }
 
+    /// Sims, длинное меню: пай-меню не вмещает столько пунктов — те же капсулы в два столбца
+    private var simsList: some View {
+        VStack(spacing: 10) {
+            HStack(spacing: 8) {
+                Plumbob(mood: 1).frame(width: 18, height: 28)
+                Text(menu.title)
+                    .font(Sims.title(17))
+                    .foregroundStyle(.white)
+                    .shadow(color: Sims.panelBorder, radius: 0, x: 1, y: 1)
+                    .lineLimit(1)
+                Spacer()
+                SimsRoundButton(symbol: "xmark", colors: [Color(hex: 0xFF9A8A), Color(hex: 0xC8261A)], size: 30) { store.menu = nil }
+            }
+            fitting {
+                LazyVGrid(columns: [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)], spacing: 8) {
+                    ForEach(menu.actions) { action in
+                        Text(action.title)
+                            .font(Sims.font(13, .bold))
+                            .foregroundStyle(action.destructive ? Color(hex: 0xFFD0C8) : .white)
+                            .multilineTextAlignment(.center)
+                            .lineLimit(2)
+                            .minimumScaleFactor(0.85)
+                            .frame(maxWidth: .infinity, minHeight: 44)
+                            .padding(.horizontal, 6)
+                            .background(
+                                Capsule()
+                                    .fill(LinearGradient(colors: action.destructive ? [Color(hex: 0xE86A5A), Color(hex: 0xA8201A)] : [Sims.panelLight, Sims.panelBorder],
+                                                         startPoint: .top, endPoint: .bottom))
+                                    .overlay(Capsule().stroke(.white.opacity(0.8), lineWidth: 1.5))
+                            )
+                            .contentShape(Capsule())
+                            .pressable(skin) { run(action) }
+                    }
+                }
+                .padding(2)
+            }
+        }
+        .padding(14)
+        .background(SimsPanel(fill: [Color(hex: 0xB5D3FF), Sims.panel], radius: 18))
+        .frame(maxWidth: 380)
+    }
+
     // MARK: Pixel — розовые слоты как в рюкзаке
 
     private var pixel: some View {
@@ -226,6 +293,7 @@ struct SkinMenuView: View {
             .frame(height: 36)
             .background(Color.white)
             Rectangle().fill(Px.ink).frame(height: 3)
+            fitting {
             VStack(spacing: 6) {
                 ForEach(menu.actions) { action in
                     Text(action.title)
@@ -243,6 +311,7 @@ struct SkinMenuView: View {
                 }
             }
             .padding(12)
+            }
         }
         .background(PixelPanel(fill: Px.lavenderLight))
         .frame(maxWidth: 360)

@@ -33,7 +33,9 @@ struct ShopAmpApp: App {
                         // блюда: -dishes — окно блюд, -dishedit — редактор, -bydish — список по блюдам
                         if args.contains("-dishes") { store.openDishes(store.state.dishes.first?.id) }
                         if args.contains("-dishedit") { store.editingDish = store.state.dishes.first }
+                        if args.contains("-dishnew") { store.newDish(fromList: true) }
                         if args.contains("-bydish") { store.state.groupByDish = true }
+                        if args.contains("-catmenu"), let name = store.selectedItem?.name { store.chooseCategory(for: name) }
                         if args.contains("-menu") { store.openMainMenu() }
                         if args.contains("-edit") { store.edit(store.selectedID) }
                         if args.contains("-icons") { store.iconPickerName = store.selectedItem?.name }
