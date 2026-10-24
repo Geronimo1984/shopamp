@@ -159,6 +159,7 @@ struct ContentView: View {
             }
             // окна (SkinChrome) подстраиваются под клавиатуру
             .environmentObject(keyboard)
+            .modifier(CombineScrollLock())
     }
 
     @ViewBuilder

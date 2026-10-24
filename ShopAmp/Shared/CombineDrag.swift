@@ -10,6 +10,8 @@ final class CombineDrag: ObservableObject {
     @Published private(set) var name: String?
     /// Над чем сейчас палец — подсвечивается
     @Published private(set) var target: String?
+    /// Палец удерживает товар — прокрутка списков на это время выключена, иначе перетаскивание листало бы список
+    @Published var holding = false
     private(set) var scope = ""
 
     /// Где на экране цели: ключ цели → рамка в глобальных координатах. Не публикуется — меняется при прокрутке
@@ -174,13 +176,15 @@ private struct CombinableModifier: ViewModifier {
             }
             .animation(.easeOut(duration: 0.12), value: held)
             .background(FrameReporter(key: key, scope: scope))
-            .gesture(
+            // одновременный жест: обычный свайп по-прежнему листает список (обычный .gesture перехватывал касание)
+            .simultaneousGesture(
                 LongPressGesture(minimumDuration: 0.45)
                     .sequenced(before: DragGesture(minimumDistance: 0, coordinateSpace: .global))
                     .onChanged { value in
                         guard case .second(true, let move) = value else { return }
                         if !held {
                             held = true
+                            drag.holding = true
                             Haptics.tap()
                         }
                         guard let move else { return }
@@ -194,6 +198,7 @@ private struct CombinableModifier: ViewModifier {
                         defer {
                             held = false
                             dragging = false
+                            drag.holding = false
                         }
                         if dragging, case .second(true, let move?) = value {
                             drag.end(at: move.location, store: store)
@@ -223,6 +228,15 @@ private struct CombineTargetModifier: ViewModifier {
                 }
             }
             .background(FrameReporter(key: key, scope: scope))
+    }
+}
+
+/// Пока товар удерживают, списки не прокручиваются (scrollDisabled действует на все вложенные ScrollView)
+struct CombineScrollLock: ViewModifier {
+    @ObservedObject private var drag = CombineDrag.shared
+
+    func body(content: Content) -> some View {
+        content.scrollDisabled(drag.holding)
     }
 }
 
