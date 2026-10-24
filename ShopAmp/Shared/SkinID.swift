@@ -114,6 +114,10 @@ struct ContentView: View {
                 }
             }
             .overlay {
+                // перетаскиваемый товар под пальцем
+                CombineDragOverlay().ignoresSafeArea()
+            }
+            .overlay {
                 if let name = store.iconPickerName {
                     IconPickerView(skin: store.state.skin, name: name)
                 }

@@ -69,6 +69,10 @@ struct MenuAction: Identifiable {
     let id = UUID()
     let title: String
     var destructive = false
+    /// Картинка пункта (эмодзи) — рисуется в своём столбце, чтобы строки шли ровно
+    var emoji: String? = nil
+    /// Текущий выбор — галочка справа
+    var checked = false
     let action: () -> Void
 }
 

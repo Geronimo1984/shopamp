@@ -96,7 +96,7 @@ struct PlaylistWindow: View {
         .onTapGesture {
             store.tapItem(item.id)
         }
-        .onLongPressGesture { store.openItemMenu(item.id) }
+        .combinable(item.name) { store.openItemMenu(item.id) }
     }
 
     private func dueRow(_ memory: ItemMemory) -> some View {

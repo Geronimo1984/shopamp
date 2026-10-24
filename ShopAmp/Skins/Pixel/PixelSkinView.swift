@@ -277,7 +277,7 @@ ScrollView(.vertical, showsIndicators: false) {
             Haptics.tap()
             store.tapItem(item.id)
         }
-        .onLongPressGesture { store.openItemMenu(item.id) }
+        .combinable(item.name) { store.openItemMenu(item.id) }
     }
 
     private func dueSlot(_ memory: ItemMemory) -> some View {

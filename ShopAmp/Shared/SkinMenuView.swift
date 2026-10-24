@@ -32,8 +32,33 @@ struct SkinMenuView: View {
         case .winamp: winamp
         case .aero: aero
         case .mac: mac
-        case .sims: if menu.actions.count > 8 { simsList } else { simsPie }
+        // пай-меню — для коротких меню с короткими пунктами, иначе капсулы списком
+        case .sims: if menu.actions.count > 8 || menu.actions.contains(where: { $0.title.count > 24 }) { simsList } else { simsPie }
         case .pixel: pixel
+        }
+    }
+
+    /// В меню есть картинки пунктов — у всех строк одинаковый столбец под картинку
+    private var hasEmoji: Bool { menu.actions.contains { $0.emoji != nil } }
+
+    /// Строка пункта: [картинка] название … [галочка] — столбцы одинаковой ширины во всех строках
+    private func itemLabel(_ action: MenuAction, font: Font, color: Color, check: Color) -> some View {
+        HStack(spacing: 8) {
+            if hasEmoji {
+                Text(action.emoji ?? "").font(.system(size: 18)).frame(width: 26)
+            }
+            Text(action.title)
+                .font(font)
+                .foregroundStyle(color)
+                .lineLimit(2)
+                .minimumScaleFactor(0.8)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 6)
+            if action.checked {
+                Image(systemName: "checkmark")
+                    .font(.system(size: 15, weight: .heavy))
+                    .foregroundStyle(check)
+            }
         }
     }
 
@@ -51,9 +76,9 @@ struct SkinMenuView: View {
             fitting {
             VStack(alignment: .leading, spacing: 0) {
                 ForEach(menu.actions) { action in
-                    Text(action.title)
-                        .font(.custom("Arial", size: 17))
-                        .foregroundStyle(action.destructive ? Color(hex: 0xFF6A4A) : Winamp.listGreen)
+                    itemLabel(action, font: .custom("Arial", size: 17),
+                              color: action.destructive ? Color(hex: 0xFF6A4A) : (action.checked ? Winamp.white : Winamp.listGreen),
+                              check: Winamp.white)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.horizontal, 12)
                         .frame(height: 44)
@@ -103,24 +128,33 @@ struct SkinMenuView: View {
             VStack(spacing: 0) {
                 ForEach(Array(menu.actions.enumerated()), id: \.element.id) { index, action in
                     if index > 0 {
-                        Rectangle().fill(Color(hex: 0xD5DCE8)).frame(height: 1).padding(.leading, 44)
+                        Rectangle().fill(Color(hex: 0xD5DCE8)).frame(height: 1).padding(.leading, 36)
                     }
                     HStack(spacing: 0) {
+                        // в полосе слева — картинка пункта или значок действия
                         Group {
-                            if let icon = aeroIcon(action.title) {
+                            if let emoji = action.emoji {
+                                Text(emoji).font(.system(size: 18))
+                            } else if let icon = aeroIcon(action.title) {
                                 Image(systemName: icon)
                                     .font(.system(size: 16, weight: .semibold))
                                     .foregroundStyle(action.destructive ? Color(hex: 0xC8391B) : Color(hex: 0x2A5CCB))
                             }
                         }
-                        .frame(width: 44)
+                        .frame(width: 36)
                         Text(action.title)
-                            .font(Aero.xp(16))
+                            .font(Aero.xp(16, action.checked ? .bold : .regular))
                             .foregroundStyle(action.destructive ? Color(hex: 0xC8261A) : .black)
                             .lineLimit(1)
                             .minimumScaleFactor(0.8)
-                            .padding(.leading, 8)
+                            .padding(.leading, 12)
                         Spacer(minLength: 8)
+                        if action.checked {
+                            Image(systemName: "checkmark")
+                                .font(.system(size: 14, weight: .heavy))
+                                .foregroundStyle(Color(hex: 0x2A5CCB))
+                                .padding(.trailing, 12)
+                        }
                     }
                     .frame(height: 44)
                     .background(alignment: .leading) {
@@ -173,9 +207,8 @@ struct SkinMenuView: View {
                     if index > 0 {
                         Dither(a: Mac.ink, b: Mac.paper, cell: 1).frame(height: 2).padding(.horizontal, 6)
                     }
-                    Text(action.title + (action.destructive ? "  ⚠" : ""))
-                        .font(Mac.font(18))
-                        .foregroundStyle(Mac.ink)
+                    itemLabel(MenuAction(title: action.title + (action.destructive ? "  ⚠" : ""), emoji: action.emoji, checked: action.checked) {},
+                              font: Mac.font(18), color: Mac.ink, check: Mac.ink)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.horizontal, 12)
                         .frame(height: 44)
@@ -208,7 +241,7 @@ struct SkinMenuView: View {
             }
             ForEach(Array(menu.actions.enumerated()), id: \.element.id) { index, action in
                 let angle = -Double.pi / 2 + Double(index) / Double(count) * 2 * .pi
-                Text(action.title)
+                Text((action.emoji.map { $0 + " " } ?? "") + action.title + (action.checked ? " ✓" : ""))
                     .font(Sims.font(12, .bold))
                     .foregroundStyle(action.destructive ? Color(hex: 0xFFD0C8) : .white)
                     .multilineTextAlignment(.center)
@@ -244,21 +277,20 @@ struct SkinMenuView: View {
                 SimsRoundButton(symbol: "xmark", colors: [Color(hex: 0xFF9A8A), Color(hex: 0xC8261A)], size: 30) { store.menu = nil }
             }
             fitting {
-                LazyVGrid(columns: [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)], spacing: 8) {
+                // длинные пункты — в один столбец, иначе в два
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8),
+                                         count: menu.actions.contains(where: { $0.title.count > 24 }) ? 1 : 2), spacing: 8) {
                     ForEach(menu.actions) { action in
-                        Text(action.title)
-                            .font(Sims.font(13, .bold))
-                            .foregroundStyle(action.destructive ? Color(hex: 0xFFD0C8) : .white)
-                            .multilineTextAlignment(.center)
-                            .lineLimit(2)
-                            .minimumScaleFactor(0.85)
-                            .frame(maxWidth: .infinity, minHeight: 44)
-                            .padding(.horizontal, 6)
+                        // выбранный пункт в Симс — жёлтая обводка капсулы, галочка не занимает место
+                        itemLabel(MenuAction(title: action.title, destructive: action.destructive, emoji: action.emoji) {}, font: Sims.font(13, .bold),
+                                  color: action.destructive ? Color(hex: 0xFFD0C8) : .white, check: Color(hex: 0xFFF59A))
+                            .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                            .padding(.horizontal, 10)
                             .background(
                                 Capsule()
                                     .fill(LinearGradient(colors: action.destructive ? [Color(hex: 0xE86A5A), Color(hex: 0xA8201A)] : [Sims.panelLight, Sims.panelBorder],
                                                          startPoint: .top, endPoint: .bottom))
-                                    .overlay(Capsule().stroke(.white.opacity(0.8), lineWidth: 1.5))
+                                    .overlay(Capsule().stroke(action.checked ? Color(hex: 0xFFF59A) : .white.opacity(0.8), lineWidth: action.checked ? 2.5 : 1.5))
                             )
                             .contentShape(Capsule())
                             .pressable(skin) { run(action) }
@@ -296,11 +328,7 @@ struct SkinMenuView: View {
             fitting {
             VStack(spacing: 6) {
                 ForEach(menu.actions) { action in
-                    Text(action.title)
-                        .font(Px.body(16, .bold))
-                        .foregroundStyle(action.destructive ? .white : Px.navy)
-                        .multilineTextAlignment(.leading)
-                        .fixedSize(horizontal: false, vertical: true)
+                    itemLabel(action, font: Px.body(16, .bold), color: action.destructive ? .white : Px.navy, check: Px.pink)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.horizontal, 10)
                         .padding(.vertical, 8)

@@ -36,6 +36,28 @@ enum ProductIcon {
 
     /// Порядок важен: более точные слова — раньше («кокосовое молоко» до «молока», «зубная паста» до «пасты»)
     static let table: [Entry] = [
+        // новые иконки (25.10) — точные слова, поэтому раньше общих правил ниже
+        Entry(keys: ["моющ", "для посуды", "для стирк", "стиральн", "порошок", "кондиционер для бел"], emoji: "🫧", fluent: "Bubbles"),
+        Entry(keys: ["баклажан"], emoji: "🍆", fluent: "Eggplant"),
+        Entry(keys: ["батат", "сладкий картоф"], emoji: "🍠", fluent: "Roasted sweet potato"),
+        Entry(keys: ["рёбр", "ребрышк", "ребр", "рульк"], emoji: "🍖", fluent: "Meat on bone"),
+        Entry(keys: ["буррито", "тортиль"], emoji: "🌯", fluent: "Burrito"),
+        Entry(keys: ["цезарь", "овощной салат", "салат-микс", "микс салат"], emoji: "🥗", fluent: "Green salad"),
+        Entry(keys: ["багет", "чиабатт"], emoji: "🥖", fluent: "Baguette bread"),
+        Entry(keys: ["суши", "ролл", "нори"], emoji: "🍣", fluent: "Sushi"),
+        Entry(keys: ["пломбир", "эскимо", "сорбет"], emoji: "🍨", fluent: "Ice cream"),
+        Entry(keys: ["щербет", "гранит"], emoji: "🍧", fluent: "Shaved ice"),
+        Entry(keys: ["шампан", "игрист", "просекко"], emoji: "🍾", fluent: "Bottle with popping cork"),
+        Entry(keys: ["коктейл", "мартини", "вермут"], emoji: "🍸", fluent: "Cocktail glass"),
+        Entry(keys: ["мохито", "смузи", "тропическ"], emoji: "🍹", fluent: "Tropical drink"),
+        Entry(keys: ["виски", "коньяк", "бурбон", "бренди"], emoji: "🥃", fluent: "Tumbler glass"),
+        Entry(keys: ["мате", "йерба"], emoji: "🧉", fluent: "Mate"),
+        Entry(keys: ["бенто", "бэнто", "ланч-бокс", "ланчбокс"], emoji: "🍱", fluent: "Bento box"),
+        Entry(keys: ["карри"], emoji: "🍛", fluent: "Curry rice"),
+        Entry(keys: ["лапш", "рамен", "удон", "фунчоз"], emoji: "🍜", fluent: "Steaming bowl"),
+        Entry(keys: ["суп", "бульон", "борщ", "щи "], emoji: "🍲", fluent: "Pot of food"),
+        Entry(keys: ["паэль", "плов", "рагу"], emoji: "🥘", fluent: "Shallow pan of food"),
+        Entry(keys: ["фондю"], emoji: "🫕", fluent: "Fondue"),
         Entry(keys: ["зубн", "щетк"], emoji: "🪥", fluent: "Toothbrush"),
         Entry(keys: ["туалетн", "бумажн", "полотенц", "салфет", "бумаг"], emoji: "🧻", fluent: "Roll of paper"),
         Entry(keys: ["губк", "тряпк"], emoji: "🧽", fluent: "Sponge"),

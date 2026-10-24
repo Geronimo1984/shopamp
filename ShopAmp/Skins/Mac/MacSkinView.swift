@@ -11,13 +11,13 @@ struct MacSkinView: View {
     var body: some View {
         ZStack {
             Mac.bezel.ignoresSafeArea()
-            VStack(spacing: 10) {
+            VStack(spacing: 4) {
                 screen
                 bezelBottom
             }
-            .padding(.horizontal, 12)
-            .padding(.top, 4)
-            .padding(.bottom, 6)
+            .padding(.horizontal, 5)
+            .padding(.top, 2)
+            .padding(.bottom, 2)
         }
         .overlay {
             if store.isAdding || store.editingID != nil {
@@ -39,16 +39,17 @@ struct MacSkinView: View {
     // MARK: Монитор
 
     private var screen: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 6) {
             desktopIcons
             controlPanel
-                .frame(height: 150)
+                .frame(height: 136)
                 .assistAnchor("controlPanel")
             finderWindow
                 .frame(maxHeight: .infinity)
             statusBar
         }
-        .padding(12)
+        .padding(.horizontal, 6)
+        .padding(.vertical, 7)
         .background(Mac.screen)
         .overlay(alignment: .center) {
             if showLegend {
@@ -58,11 +59,11 @@ struct MacSkinView: View {
                     .onTapGesture { withAnimation { showLegend = false } }
             }
         }
-        .padding(7)
+        .padding(4)
         .background(Dither(a: Mac.ink, b: Mac.bezel, cell: 1.5))
         .overlay(Rectangle().stroke(Mac.ink, lineWidth: 3))
         .clipShape(RoundedRectangle(cornerRadius: 6))
-        .padding(10)
+        .padding(6)
         .background(
             RoundedRectangle(cornerRadius: 14)
                 .fill(Mac.bezel)
@@ -95,7 +96,7 @@ struct MacSkinView: View {
             .buttonStyle(MacInvertStyle())
             .assistAnchor("power")
         }
-        .padding(.horizontal, 6)
+        .padding(.horizontal, 10)
         .frame(height: 30)
     }
 
@@ -390,7 +391,7 @@ ScrollView(.vertical, showsIndicators: false) {
         }
         .assistAnchor("list", when: item.id == store.displayItems.first?.id)
         .onTapGesture { store.tapItem(item.id) }
-        .onLongPressGesture { store.openItemMenu(item.id) }
+        .combinable(item.name) { store.openItemMenu(item.id) }
     }
 
     private var memorySettingsRow: some View {

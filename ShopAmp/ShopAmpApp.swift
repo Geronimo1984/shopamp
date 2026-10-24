@@ -34,6 +34,16 @@ struct ShopAmpApp: App {
                         if args.contains("-dishes") { store.openDishes(store.state.dishes.first?.id) }
                         if args.contains("-dishedit") { store.editingDish = store.state.dishes.first }
                         if args.contains("-dishnew") { store.newDish(fromList: true) }
+                        // совмещение товаров: -combine — меню «Огурцы + Фета», -combine2 — «Бананы + Яйца», -dragdemo — товар под пальцем
+                        if args.contains("-combine") { store.combine("Огурцы", onto: ShopStore.key("Фета")) }
+                        if args.contains("-combine2") { store.combine("Бананы", onto: ShopStore.key("Яйца")) }
+                        if args.contains("-dragdemo") {
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                                let drag = CombineDrag.shared
+                                drag.begin("Бананы", scope: "list")
+                                if let point = drag.center(of: ShopStore.key("Яйца")) { drag.move(to: point) }
+                            }
+                        }
                         if args.contains("-bydish") { store.state.groupByDish = true }
                         if args.contains("-catmenu"), let name = store.selectedItem?.name { store.chooseCategory(for: name) }
                         if args.contains("-menu") { store.openMainMenu() }

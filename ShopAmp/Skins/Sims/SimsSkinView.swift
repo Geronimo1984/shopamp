@@ -409,7 +409,7 @@ ScrollView(.vertical, showsIndicators: false) {
         .background(RoundedRectangle(cornerRadius: 6).fill(selected ? Color(hex: 0x2A54B0).opacity(0.75) : .clear))
         .contentShape(Rectangle())
         .onTapGesture { store.tapItem(item.id) }
-        .onLongPressGesture { store.openItemMenu(item.id) }
+        .combinable(item.name) { store.openItemMenu(item.id) }
     }
 
     // MARK: News

@@ -98,7 +98,7 @@ extension ShopStore {
     func chooseCategory(for name: String, onPick: ((ShopCategory) -> Void)? = nil) {
         let current = category(name)
         menu = SkinMenu(title: "Отдел: \(name)", actions: ShopCategory.allCases.map { cat in
-            MenuAction(title: (cat == current ? "✓ " : "") + cat.label) { [weak self] in
+            MenuAction(title: cat.title, emoji: cat.emoji, checked: cat == current) { [weak self] in
                 self?.setCategory(name, cat)
                 onPick?(cat)
             }
@@ -139,6 +139,8 @@ struct CategoryHeader: View {
             Haptics.tap()
             store.openDishes(id)
         }
+        // на заголовок блюда можно бросить товар — он добавится в блюдо
+        .combineTarget(section.dishID.map { CombineDrag.dishPrefix + $0.uuidString })
         .padding(.horizontal, 6)
         .padding(.top, 8)
         .padding(.bottom, 2)

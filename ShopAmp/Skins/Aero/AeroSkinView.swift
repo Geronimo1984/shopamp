@@ -373,7 +373,7 @@ ScrollView(.vertical, showsIndicators: false) {
             store.toggleBought(item.id)
         }
         .onTapGesture { store.tapItem(item.id) }
-        .onLongPressGesture { store.openItemMenu(item.id) }
+        .combinable(item.name) { store.openItemMenu(item.id) }
     }
 
     // MARK: Купить снова
