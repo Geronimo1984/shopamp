@@ -148,7 +148,7 @@ struct AssistantLayer: View {
     /// Где стоит персонаж (для Pixel Moon — Луна в сцене)
     private var characterFrame: CGRect? {
         switch skin {
-        case .mac: return CGRect(x: size.width * 0.5 - 62, y: size.height - 87, width: 124, height: 93)
+        case .mac: return anchors["clippy"] ?? CGRect(x: size.width - 114, y: size.height - 60, width: 110, height: 82)
         case .sims: return CGRect(x: size.width - 66, y: size.height - 150, width: 50, height: 80)
         case .aero: return anchors["buddy"]
         case .pixel: return anchors["luna"]

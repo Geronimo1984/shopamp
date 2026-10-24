@@ -11,13 +11,15 @@ struct MacSkinView: View {
     var body: some View {
         ZStack {
             Mac.bezel.ignoresSafeArea()
-            VStack(spacing: 4) {
+            VStack(spacing: 2) {
                 screen
                 bezelBottom
             }
             .padding(.horizontal, 5)
             .padding(.top, 2)
-            .padding(.bottom, 2)
+            // нижняя полоса корпуса уходит в зону полоски «домой» — монитору достаётся больше высоты
+            .padding(.bottom, 4)
+            .ignoresSafeArea(.container, edges: .bottom)
         }
         .overlay {
             if store.isAdding || store.editingID != nil {
@@ -40,9 +42,11 @@ struct MacSkinView: View {
 
     private var screen: some View {
         VStack(spacing: 6) {
-            desktopIcons
+            // иконки — своей высоты, список не должен их сжимать
+            desktopIcons.fixedSize(horizontal: false, vertical: true)
+            // своя высота по содержимому: при жёсткой высоте окно вылезало вверх и закрывало подписи иконок
             controlPanel
-                .frame(height: 136)
+                .fixedSize(horizontal: false, vertical: true)
                 .assistAnchor("controlPanel")
             finderWindow
                 .frame(maxHeight: .infinity)
@@ -71,18 +75,9 @@ struct MacSkinView: View {
         )
     }
 
+    /// Низ корпуса: кнопка скина слева, решётка справа — на ней стоит скрепка
     private var bezelBottom: some View {
         HStack {
-            VStack(spacing: 3) {
-                ForEach(0..<5, id: \.self) { _ in
-                    Rectangle().fill(Mac.ink).frame(width: 70, height: 2)
-                }
-            }
-            Spacer()
-            Spacer()
-            Text("скин ▸")
-                .font(Mac.font(13, .semibold))
-                .foregroundStyle(Mac.ink)
             Button {
                 Haptics.tap()
                 store.isChoosingSkin = true
@@ -95,9 +90,27 @@ struct MacSkinView: View {
             }
             .buttonStyle(MacInvertStyle())
             .assistAnchor("power")
+            Text("◂ скин")
+                .font(Mac.font(13, .semibold))
+                .foregroundStyle(Mac.ink)
+            Spacer()
+            VStack(spacing: 3) {
+                ForEach(0..<5, id: \.self) { _ in
+                    Rectangle().fill(Mac.ink).frame(width: 70, height: 2)
+                }
+            }
         }
         .padding(.horizontal, 10)
         .frame(height: 30)
+        // место скрепки: стоит на решётке справа, не закрывая сумму в строке состояния
+        .overlay(alignment: .bottomTrailing) {
+            Color.clear
+                .frame(width: 110, height: 82)
+                .padding(.trailing, 2)
+                .padding(.bottom, 4)
+                .assistAnchor("clippy")
+                .allowsHitTesting(false)
+        }
     }
 
     // MARK: Иконки рабочего стола
@@ -106,7 +119,7 @@ struct MacSkinView: View {
         HStack(alignment: .top, spacing: 4) {
             desktopIcon(MacIcons.mail, "Добавить") { store.isEditingMemory = true }
                 .assistAnchor("add")
-            desktopIcon(MacIcons.card, "Купить\nснова (\(store.dueSuggestions.count))") { store.addDue() }
+            desktopIcon(MacIcons.card, "Снова (\(store.dueSuggestions.count))") { store.addDue() }
                 .assistAnchor("again")
             desktopIcon(MacIcons.folder, "Карточки") { store.isEditingMemory = true }
                 .assistAnchor("cards")
@@ -142,8 +155,8 @@ struct MacSkinView: View {
                 .font(Mac.font(12))
                 .foregroundStyle(Mac.paper)
                 .multilineTextAlignment(.center)
-                .lineLimit(2)
-                .minimumScaleFactor(0.8)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
                 .frame(maxWidth: .infinity)
         }
     }
@@ -156,7 +169,7 @@ struct MacSkinView: View {
                 VStack(spacing: 0) {
                     HStack(spacing: 0) {
                         MacGroupBox {
-                            VStack(alignment: .leading, spacing: 5) {
+                            VStack(alignment: .leading, spacing: 2) {
                                 Text("Подсказки").font(Mac.font(13, .semibold))
                                 radioRow("Вкл", on: store.state.autoSuggest) { if !store.state.autoSuggest { store.toggle(\.autoSuggest) } }
                                 radioRow("Выкл", on: !store.state.autoSuggest) { if store.state.autoSuggest { store.toggle(\.autoSuggest) } }
@@ -164,7 +177,7 @@ struct MacSkinView: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                         }
                         MacGroupBox {
-                            VStack(alignment: .leading, spacing: 5) {
+                            VStack(alignment: .leading, spacing: 2) {
                                 Text("Купленное").font(Mac.font(13, .semibold))
                                 radioRow("На месте", on: !store.state.sortBought) { if store.state.sortBought { store.toggle(\.sortBought) } }
                                 radioRow("В конец", on: store.state.sortBought) { if !store.state.sortBought { store.toggle(\.sortBought) } }
@@ -196,7 +209,7 @@ struct MacSkinView: View {
             MacRadio(on: on)
             Text(title).font(Mac.font(14)).lineLimit(1).minimumScaleFactor(0.7)
         }
-        .frame(minHeight: 30)
+        .frame(minHeight: 27)
         .contentShape(Rectangle())
         .pressable(.mac) {
             Haptics.tap()
@@ -485,11 +498,8 @@ ScrollView(.vertical, showsIndicators: false) {
                     .lineLimit(1)
                     .minimumScaleFactor(0.6)
             }
+            // справа — место для скрепки
             Spacer()
-            TimelineView(.periodic(from: .now, by: 15)) { context in
-                Text(context.date, format: .dateTime.hour(.twoDigits(amPM: .omitted)).minute(.twoDigits))
-                    .font(Mac.font(15, .bold))
-            }
         }
         .foregroundStyle(Mac.ink)
         .padding(.horizontal, 6)
