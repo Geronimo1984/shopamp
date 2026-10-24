@@ -371,10 +371,20 @@ ScrollView(.vertical, showsIndicators: false) {
                 .strikethrough(item.bought, color: Sims.ink)
                 .foregroundStyle(item.bought ? Sims.ink.opacity(0.5) : (selected ? .white : Sims.ink))
                 .lineLimit(1)
+                .minimumScaleFactor(0.8)
+                .layoutPriority(1)
             Spacer(minLength: 4)
-            Text(item.bought ? "✓" : store.qtyText(item))
-                .font(Sims.verdana(11, .bold))
-                .foregroundStyle(selected ? .white : Sims.ink)
+            // количество и цена столбиком — название помещается целиком
+            VStack(alignment: .trailing, spacing: 0) {
+                Text(item.bought ? "✓" : "\(item.qty) шт")
+                if !item.bought, let cost = store.cost(item) {
+                    Text(ShopStore.rub(cost))
+                }
+            }
+            .font(Sims.verdana(11, .bold))
+            .lineLimit(1)
+            .fixedSize()
+            .foregroundStyle(selected ? .white : Sims.ink)
             Button {
                 Haptics.tap()
                 store.edit(item.id)

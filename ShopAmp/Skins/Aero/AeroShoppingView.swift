@@ -41,6 +41,15 @@ struct AeroShoppingView: View {
             .background(XPWelcomeBackground())
             bottomBand
         }
+        // порядок списка изменился (вернули товар, переключили «по блюдам», удалили) — барабан снова на выбранном товаре
+        .onChange(of: store.displayItems.map(\.id)) { ids in
+            guard touchStart == nil else { return }
+            let target = ids.firstIndex(where: { $0 == store.selectedID }) ?? min(Int(wheel.rounded()), max(ids.count - 1, 0))
+            if CGFloat(target) != wheel {
+                withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) { wheel = CGFloat(target) }
+            }
+            if !ids.contains(where: { $0 == store.selectedID }), ids.indices.contains(target) { store.selectedID = ids[target] }
+        }
         .onAppear {
             if let i = store.displayItems.firstIndex(where: { $0.id == store.selectedID }) { wheel = CGFloat(i) }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) {

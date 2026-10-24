@@ -365,8 +365,18 @@ ScrollView(.vertical, showsIndicators: false) {
                 .minimumScaleFactor(0.75)
                 .strikethrough(item.bought, color: fg)
                 .lineLimit(1)
+                .layoutPriority(1)
             Spacer(minLength: 4)
-            Text(store.qtyText(item)).font(Mac.font(14)).lineLimit(1).minimumScaleFactor(0.7)
+            // количество и цена — узким столбиком в две строки, чтобы название помещалось
+            VStack(alignment: .trailing, spacing: 0) {
+                Text("\(item.qty) шт").font(Mac.font(13))
+                if let cost = store.cost(item) {
+                    Text(ShopStore.rub(cost)).font(Mac.font(12))
+                }
+            }
+            .lineLimit(1)
+            .minimumScaleFactor(0.7)
+            .fixedSize()
         }
         .foregroundStyle(fg)
         .padding(.leading, 30)

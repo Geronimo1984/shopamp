@@ -98,9 +98,9 @@ struct PixelAddItemDialog: View {
                 }
                 HStack(spacing: 8) {
                     Text("КОЛ-ВО").font(Px.title(8)).foregroundStyle(Px.ink)
-                    Button("−") { qty = max(qty - 1, 1) }.buttonStyle(PixelButtonStyle(fill: .white, text: Px.ink))
+                    Button { qty = max(qty - 1, 1) } label: { Text("−").frame(width: 28) }.buttonStyle(PixelButtonStyle(fill: .white, text: Px.ink))
                     Text("x\(qty)").font(Px.title(11)).foregroundStyle(Px.navy).frame(width: 44)
-                    Button("+") { qty = min(qty + 1, 99) }.buttonStyle(PixelButtonStyle(fill: .white, text: Px.ink))
+                    Button { qty = min(qty + 1, 99) } label: { Text("+").frame(width: 28) }.buttonStyle(PixelButtonStyle(fill: .white, text: Px.ink))
                 }
                 PriceField(skin: .pixel, text: $priceText, qty: qty)
                 CategoryChip(skin: .pixel, name: name)

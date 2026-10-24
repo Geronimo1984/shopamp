@@ -153,6 +153,8 @@ struct ContentView: View {
             .onAppear {
                 if !store.state.seenHelp { store.showHelp = true }
             }
+            // окна (SkinChrome) подстраиваются под клавиатуру
+            .environmentObject(keyboard)
     }
 
     @ViewBuilder

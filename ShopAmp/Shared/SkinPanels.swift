@@ -28,7 +28,7 @@ struct SkinStyle {
         case .sims:
             return SkinStyle(font: { Sims.font($0 - 2, $1) }, text: .white,
                              secondary: Color(hex: 0x1F3C78), accent: Sims.link,
-                             rowFill: Color.white.opacity(0.12), rowStroke: Sims.panelBorder, onAccent: Sims.ink)
+                             rowFill: Sims.panelBorder.opacity(0.35), rowStroke: Sims.panelBorder, onAccent: Sims.ink)
         case .pixel:
             return SkinStyle(font: { Px.body($0, $1) }, text: Px.navy,
                              secondary: Px.ink, accent: Px.pink,
@@ -39,6 +39,7 @@ struct SkinStyle {
 
 /// Рамка окна в стиле скина: заголовок, кнопка закрытия, содержимое
 struct SkinChrome<Content: View>: View {
+    @EnvironmentObject private var keyboard: KeyboardWatcher
     let title: String
     let skin: SkinID
     let onClose: () -> Void
@@ -56,10 +57,26 @@ struct SkinChrome<Content: View>: View {
             Color.black.opacity(0.4)
                 .ignoresSafeArea()
                 .onTapGesture(perform: onClose)
-            window
-                .frame(maxWidth: 400)
+            // Отступы считаются по экрану: скины по-разному раскладывают окна и по-разному уступают место клавиатуре.
+            // С клавиатурой окно стоит между строкой состояния и кнопкой «Готово» над клавиатурой.
+            // Структура одна и та же, меняются только отступы — иначе поле ввода теряет фокус
+            GeometryReader { geo in
+                let frame = geo.frame(in: .global)
+                let screen = UIScreen.main.bounds.height
+                let safe = KeyboardWatcher.insets
+                let topEdge = safe.top + (keyboard.height > 0 ? 4 : 30)
+                let bottomEdge = keyboard.height > 0 ? screen - keyboard.height - 52 : screen - safe.bottom - 30
+                VStack(spacing: 0) {
+                    Spacer(minLength: 0)
+                    window.frame(maxWidth: 400)
+                    Spacer(minLength: 0)
+                }
                 .padding(.horizontal, 14)
-                .padding(.vertical, 40)
+                .padding(.top, max(topEdge - frame.minY, 0))
+                .padding(.bottom, max(frame.maxY - bottomEdge, 0))
+                .frame(width: geo.size.width, height: geo.size.height)
+            }
+            .ignoresSafeArea(.keyboard)
         }
     }
 
@@ -287,6 +304,7 @@ enum HelpContent {
 /// здесь же — сроки «купить снова», иконка, новые карточки и удаление
 struct MemoryView: View {
     @EnvironmentObject var store: ShopStore
+    @EnvironmentObject private var keyboard: KeyboardWatcher
     let skin: SkinID
     @State private var search = ""
     @State private var expanded: String?
@@ -303,10 +321,12 @@ struct MemoryView: View {
         let exists = store.state.memory[ShopStore.key(search)] != nil
         SkinChrome(title: "Карточки товаров", skin: skin, onClose: { store.isEditingMemory = false }) {
             VStack(alignment: .leading, spacing: 8) {
-                Text("Отметьте ☑, что взять в этот поход. Нажмите на карточку — цена, сроки, иконка, удаление. Нет нужного товара — «+ Новая карточка».")
-                    .font(style.font(13, .regular))
-                    .foregroundStyle(style.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
+                if keyboard.height == 0 {
+                    Text("Отметьте ☑, что взять в этот поход. Нажмите на карточку — цена, сроки, иконка, удаление. Нет нужного товара — «+ Новая карточка».")
+                        .font(style.font(13, .regular))
+                        .foregroundStyle(style.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
                 HStack(spacing: 6) {
                     TextField("", text: $search, prompt: Text("Найти или новая карточка").foregroundColor(style.secondary))
                         .font(style.font(15, .regular))

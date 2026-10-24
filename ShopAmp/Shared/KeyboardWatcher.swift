@@ -21,6 +21,18 @@ final class KeyboardWatcher: ObservableObject {
 
     deinit { tokens.forEach(NotificationCenter.default.removeObserver) }
 
+    /// Безопасные отступы экрана (строка состояния, полоска «домой») — окна не заходят под них
+    static var insets: UIEdgeInsets {
+        let window = UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .flatMap(\.windows)
+            .first { $0.isKeyWindow }
+        var insets = window?.safeAreaInsets ?? UIEdgeInsets(top: 47, left: 0, bottom: 34, right: 0)
+        let statusBar = window?.windowScene?.statusBarManager?.statusBarFrame.height ?? 0
+        insets.top = max(insets.top, statusBar, 20)
+        return insets
+    }
+
     static func hide() {
         UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
     }
