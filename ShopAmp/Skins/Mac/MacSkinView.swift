@@ -17,8 +17,9 @@ struct MacSkinView: View {
             }
             .padding(.horizontal, 5)
             .padding(.top, 2)
-            // нижняя полоса корпуса уходит в зону полоски «домой» — монитору достаётся больше высоты
-            .padding(.bottom, 4)
+            // нижняя полоса корпуса занимает половину зоны полоски «домой»: монитору больше высоты,
+            // а кнопки не попадают в скруглённые углы экрана
+            .padding(.bottom, max(KeyboardWatcher.insets.bottom * 0.5, 4))
             .ignoresSafeArea(.container, edges: .bottom)
         }
         .overlay {
@@ -100,14 +101,15 @@ struct MacSkinView: View {
                 }
             }
         }
-        .padding(.horizontal, 10)
+        // отступ от скруглённых углов экрана
+        .padding(.horizontal, 22)
         .frame(height: 30)
         // место скрепки: стоит на решётке справа, не закрывая сумму в строке состояния
         .overlay(alignment: .bottomTrailing) {
             Color.clear
-                .frame(width: 110, height: 82)
-                .padding(.trailing, 2)
-                .padding(.bottom, 4)
+                .frame(width: 104, height: 78)
+                .padding(.trailing, 16)
+                .padding(.bottom, 6)
                 .assistAnchor("clippy")
                 .allowsHitTesting(false)
         }
