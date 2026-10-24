@@ -85,6 +85,10 @@ struct SavedState: Codable {
     var sortBought = false
     /// Список сгруппирован по отделам магазина
     var groupByCategory = true
+    /// Список сгруппирован по блюдам (важнее отделов)
+    var groupByDish = false
+    /// Готовые блюда из карточек товаров
+    var dishes: [Dish] = []
     var showEqualizer = false
     var showPlaylist = true
     var skin: SkinID = .winamp
@@ -107,6 +111,8 @@ struct SavedState: Codable {
         autoAdd = try c.decodeIfPresent(Bool.self, forKey: .autoAdd) ?? false
         sortBought = try c.decodeIfPresent(Bool.self, forKey: .sortBought) ?? false
         groupByCategory = try c.decodeIfPresent(Bool.self, forKey: .groupByCategory) ?? true
+        groupByDish = try c.decodeIfPresent(Bool.self, forKey: .groupByDish) ?? false
+        dishes = try c.decodeIfPresent([Dish].self, forKey: .dishes) ?? []
         showEqualizer = try c.decodeIfPresent(Bool.self, forKey: .showEqualizer) ?? false
         showPlaylist = try c.decodeIfPresent(Bool.self, forKey: .showPlaylist) ?? true
         skin = (try? c.decodeIfPresent(SkinID.self, forKey: .skin)) ?? .winamp
@@ -146,6 +152,12 @@ final class ShopStore: ObservableObject {
     /// Элемент, о котором сейчас рассказывает помощник (страница прокручивается к нему)
     @Published var assistantTarget: String?
     @Published var isEditingMemory = false
+    /// Окно «Блюда и рецепты»
+    @Published var isViewingDishes = false
+    /// Блюдо в редакторе (черновик)
+    @Published var editingDish: Dish?
+    /// Раскрытое блюдо в окне «Блюда и рецепты»
+    @Published var openDishID: UUID?
     private var toastToken = UUID()
 
     private let fileURL: URL?
@@ -265,15 +277,24 @@ final class ShopStore: ObservableObject {
 
     // MARK: - Чтение
 
-    /// Порядок списка: по отделам магазина (если включено), внутри — купленное в конец (если включено), иначе как добавляли
+    /// Порядок списка: по блюдам или по отделам магазина (если включено),
+    /// внутри — купленное в конец (если включено), иначе как добавляли
     var displayItems: [ShopItem] {
         let indexed = Array(state.items.enumerated())
-        let group = state.groupByCategory, bought = state.sortBought
+        let group = isGrouped, bought = state.sortBought
         guard group || bought else { return state.items }
-        let cats = group ? Dictionary(uniqueKeysWithValues: state.items.map { ($0.id, category($0.name).order) }) : [:]
+        var orders: [UUID: (Int, Int)] = [:]
+        if group {
+            for item in state.items { orders[item.id] = sectionOrder(for: item.name) }
+        }
         return indexed.sorted { a, b in
-            if group, cats[a.element.id] != cats[b.element.id] { return (cats[a.element.id] ?? 0) < (cats[b.element.id] ?? 0) }
-            if bought, a.element.bought != b.element.bought { return !a.element.bought }
+            if group, let oa = orders[a.element.id], let ob = orders[b.element.id] {
+                if oa.0 != ob.0 { return oa.0 < ob.0 }
+                if bought, a.element.bought != b.element.bought { return !a.element.bought }
+                if oa.1 != ob.1 { return oa.1 < ob.1 }
+            } else if bought, a.element.bought != b.element.bought {
+                return !a.element.bought
+            }
             return a.offset < b.offset
         }.map(\.element)
     }
@@ -380,10 +401,14 @@ final class ShopStore: ObservableObject {
         menu = SkinMenu(title: "Меню", actions: [
             MenuAction(title: "Изменить выбранный товар…") { [weak self] in self?.edit(self?.selectedID) },
             MenuAction(title: "Подобрать из карточек товаров…") { [weak self] in self?.isEditingMemory = true },
+            MenuAction(title: "Блюда и рецепты…") { [weak self] in self?.openDishes() },
             MenuAction(title: "Добавить всё, что пора купить") { [weak self] in self?.addDue() },
             MenuAction(title: "Новый поход (список по срокам)") { [weak self] in self?.startNewTrip() },
             MenuAction(title: state.sortBought ? "Не сортировать купленное" : "Купленное — в конец") { [weak self] in
                 self?.toggle(\.sortBought)
+            },
+            MenuAction(title: state.groupByDish ? "Список по отделам (не по блюдам)" : "Список по блюдам") { [weak self] in
+                self?.toggleGroupByDish()
             },
             MenuAction(title: state.groupByCategory ? "Не группировать по отделам" : "Группировать по отделам") { [weak self] in
                 self?.toggle(\.groupByCategory)
@@ -640,6 +665,14 @@ extension ShopStore {
                               ("Яйца", 129), ("Кофе", 690), ("Вода", 45), ("Гречка", 99)] {
             store.setPrice(name, price)
         }
+        // блюда для демо
+        store.state.dishes = [
+            Dish(name: "Салат с фетой", emoji: "🥗", ingredients: ["Огурцы", "Помидоры черри", "Фета", "Маслины"],
+                 note: "Нарезать огурцы и черри, добавить фету кубиками и маслины. Заправить оливковым маслом, щепотка орегано."),
+            Dish(name: "Гречка с курицей", emoji: "🍲", ingredients: ["Гречка", "Куриное филе", "Сметана", "Чеснок"],
+                 note: "Филе обжарить с чесноком, потушить в сметане 10 минут, подать с гречкой."),
+            Dish(name: "Завтрак", emoji: "🍳", ingredients: ["Яйца", "Хлеб бородинский", "Бекон", "Кофе"]),
+        ]
         store.selectedID = store.state.items.first { $0.name == "Бананы" }?.id
         return store
     }

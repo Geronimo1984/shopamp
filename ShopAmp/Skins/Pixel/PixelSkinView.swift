@@ -181,17 +181,13 @@ ScrollView(.vertical, showsIndicators: false) {
             .padding(.bottom, 6)
             .assistAnchor("tabs")
 
-            if tab != .due && store.state.groupByCategory && !tabItems.isEmpty {
-                // по отделам: заголовок и ряд ячеек на каждый отдел
-                let items = tabItems
+            if tab != .due && store.isGrouped && !tabItems.isEmpty {
+                // по блюдам или отделам: заголовок и ряд ячеек на каждый раздел
                 VStack(alignment: .leading, spacing: 4) {
-                    ForEach(ShopCategory.allCases) { cat in
-                        let group = items.filter { store.category($0.name) == cat }
-                        if !group.isEmpty {
-                            CategoryHeader(skin: .pixel, category: cat, count: group.count)
-                            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 5), spacing: 6) {
-                                ForEach(group) { slot($0) }
-                            }
+                    ForEach(store.sections(tabItems), id: \.0.id) { section, group in
+                        CategoryHeader(skin: .pixel, section: section, count: group.count)
+                        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 5), spacing: 6) {
+                            ForEach(group) { slot($0) }
                         }
                     }
                 }

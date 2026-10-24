@@ -105,36 +105,48 @@ extension ShopStore {
         })
     }
 
-    /// Нужен ли заголовок отдела перед строкой (список сгруппирован и отдел сменился)
-    func categoryHeader(_ list: [ShopItem], at index: Int) -> ShopCategory? {
-        guard state.groupByCategory, index < list.count else { return nil }
-        let cat = category(list[index].name)
-        if index == 0 { return cat }
-        return category(list[index - 1].name) == cat ? nil : cat
-    }
 }
 
-/// Заголовок отдела в списке — в стиле скина
+/// Заголовок раздела списка (отдел или блюдо) — в стиле скина.
+/// Заголовок блюда открывает его в «Блюда и рецепты»
 struct CategoryHeader: View {
+    @EnvironmentObject var store: ShopStore
     let skin: SkinID
-    let category: ShopCategory
+    let section: ListSection
     var count: Int? = nil
 
     var body: some View {
         let style = SkinStyle.of(skin)
         HStack(spacing: 6) {
-            Text(category.emoji).font(.system(size: 14))
-            Text(skin == .winamp ? category.title.uppercased() : category.title)
+            Text(section.emoji).font(.system(size: 14))
+            Text(skin == .winamp ? section.title.uppercased() : section.title)
                 .font(style.font(skin == .pixel ? 12 : 13, .bold))
                 .foregroundStyle(headerInk(style))
                 .lineLimit(1)
             if let count { Text("\(count)").font(style.font(11, .regular)).foregroundStyle(style.secondary) }
             Rectangle().fill(headerInk(style).opacity(0.35)).frame(height: 1)
+            if let id = section.dishID {
+                Text(recipeMark(id))
+                    .font(style.font(11, .bold))
+                    .foregroundStyle(headerInk(style))
+            }
+        }
+        .contentShape(Rectangle())
+        .onTapGesture {
+            guard let id = section.dishID else { return }
+            Haptics.tap()
+            store.openDishes(id)
         }
         .padding(.horizontal, 6)
         .padding(.top, 8)
         .padding(.bottom, 2)
         .accessibilityAddTraits(.isHeader)
+    }
+
+    /// У блюда с рецептом — книжка, у остальных — стрелка «открыть»
+    private func recipeMark(_ id: UUID) -> String {
+        let note = store.state.dishes.first { $0.id == id }?.note ?? ""
+        return note.isEmpty ? "›" : "📖 ›"
     }
 
     private func headerInk(_ style: SkinStyle) -> Color {

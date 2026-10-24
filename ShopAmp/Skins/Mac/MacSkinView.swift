@@ -289,8 +289,8 @@ ScrollView(.vertical, showsIndicators: false) {
                             folderRow("Купить", count: buy.count, open: $openBuy)
                             if openBuy {
                                 ForEach(Array(buy.enumerated()), id: \.element.id) { index, item in
-                                    if let cat = store.categoryHeader(buy, at: index) {
-                                        CategoryHeader(skin: .mac, category: cat).padding(.leading, 24)
+                                    if let cat = store.sectionHeader(buy, at: index) {
+                                        CategoryHeader(skin: .mac, section: cat).padding(.leading, 24)
                                     }
                                     itemRow(item)
                                 }

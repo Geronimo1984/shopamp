@@ -109,6 +109,10 @@ struct ContentView: View {
             .overlay {
                 if store.showHelp {
                     HelpView(skin: store.state.skin)
+                } else if let dish = store.editingDish {
+                    DishEditorView(skin: store.state.skin, draft: dish).id(dish.id)
+                } else if store.isViewingDishes {
+                    DishesView(skin: store.state.skin)
                 } else if store.isEditingMemory {
                     MemoryView(skin: store.state.skin)
                 }

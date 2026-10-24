@@ -329,7 +329,7 @@ ScrollView(.vertical, showsIndicators: false) {
             }
             let items = store.displayItems
             ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
-                if let cat = store.categoryHeader(items, at: index) { CategoryHeader(skin: .sims, category: cat) }
+                if let cat = store.sectionHeader(items, at: index) { CategoryHeader(skin: .sims, section: cat) }
                 itemRow(item).assistAnchor("list", when: item.id == items.first?.id)
             }
             HStack {

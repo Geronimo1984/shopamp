@@ -39,8 +39,8 @@ struct PlaylistWindow: View {
                 VStack(alignment: .leading, spacing: 0) {
                     let items = store.displayItems
                     ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
-                        if let cat = store.categoryHeader(items, at: index) {
-                            CategoryHeader(skin: .winamp, category: cat)
+                        if let cat = store.sectionHeader(items, at: index) {
+                            CategoryHeader(skin: .winamp, section: cat)
                                 .font(.custom("Arial", size: fontSize * 0.7))
                         }
                         row(index: index, item: item)

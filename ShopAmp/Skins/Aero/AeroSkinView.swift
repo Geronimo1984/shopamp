@@ -334,7 +334,7 @@ ScrollView(.vertical, showsIndicators: false) {
             }
             let items = filteredItems
             ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
-                if let cat = store.categoryHeader(items, at: index) { CategoryHeader(skin: .aero, category: cat) }
+                if let cat = store.sectionHeader(items, at: index) { CategoryHeader(skin: .aero, section: cat) }
                 listRow(item)
             }
         }

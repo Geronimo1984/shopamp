@@ -117,10 +117,10 @@ struct AeroShoppingView: View {
                 .frame(maxWidth: .infinity, alignment: .trailing)
                 .multilineTextAlignment(.trailing)
                 .foregroundStyle(.white.opacity(0.95))
-            if store.state.groupByCategory, !done, let current = currentCategory {
-                // отдел товара по центру барабана — где вы сейчас в магазине
+            if store.isGrouped, !done, let current = currentSection {
+                // отдел или блюдо товара по центру барабана
                 VStack(alignment: .trailing, spacing: 2) {
-                    Text("отдел")
+                    Text(current.kind)
                         .font(Aero.xp(11, .bold))
                         .foregroundStyle(Aero.welcomeSub)
                     Text(current.emoji)
@@ -163,10 +163,10 @@ struct AeroShoppingView: View {
         .frame(maxWidth: .infinity, alignment: .trailing)
     }
 
-    /// Отдел выбранного товара
-    private var currentCategory: ShopCategory? {
+    /// Отдел или блюдо выбранного товара
+    private var currentSection: ListSection? {
         guard let item = store.displayItems.first(where: { $0.id == store.selectedID }) ?? store.displayItems.first else { return nil }
-        return store.category(item.name)
+        return store.section(for: item.name)
     }
 
     // MARK: Список-барабан
