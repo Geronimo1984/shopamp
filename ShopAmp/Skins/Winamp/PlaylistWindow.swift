@@ -141,9 +141,14 @@ struct PlaylistWindow: View {
             HStack {
                 Text("\(store.boughtCount)/\(store.totalCount) КУПЛЕНО")
                 Spacer()
-                Text(store.hasPrices ? "КОРЗИНА \(Int(store.cartTotal.rounded()))/" + ShopStore.total(store.listTotal) : "ОСТАЛОСЬ \(store.leftCount)")
+                // нажатие — бюджет похода; при переборе сумма красная
+                Text((store.hasPrices ? "КОРЗИНА \(Int(store.cartTotal.rounded()))/" + ShopStore.total(store.listTotal) : "ОСТАЛОСЬ \(store.leftCount)")
+                     + (store.budgetTag.map { " " + $0 } ?? ""))
+                    .foregroundStyle(store.isOverBudget ? Color(hex: 0xFF6A4A) : Winamp.listGreen)
                     .lineLimit(1)
                     .minimumScaleFactor(0.6)
+                    .contentShape(Rectangle())
+                    .onTapGesture { store.openBudget() }
             }
             .font(.system(size: 13, weight: .bold, design: .monospaced))
             .foregroundStyle(Winamp.listGreen)

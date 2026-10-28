@@ -165,6 +165,14 @@ struct AeroShoppingView: View {
                     .foregroundStyle(Aero.welcomeSub)
                     .frame(maxWidth: .infinity, alignment: .trailing)
             }
+            if let verdict = store.budgetVerdictText {
+                Text(verdict)
+                    .font(Aero.xp(11, .bold))
+                    .foregroundStyle(store.isOverBudget ? Color(hex: 0xFFD27A) : .white)
+                    .multilineTextAlignment(.trailing)
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+                    .onTapGesture { store.openBudget() }
+            }
             Spacer()
         }
         .padding(.leading, 8)

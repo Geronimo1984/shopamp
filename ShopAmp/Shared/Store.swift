@@ -22,6 +22,8 @@ struct ItemMemory: Codable, Equatable {
     var price: Double? = nil
     /// Отдел магазина, выбранный вручную (nil — по названию)
     var category: String? = nil
+    /// Цены, подтверждённые на кассе (для «как растут цены»)
+    var priceHistory: [PricePoint] = []
 
     init(name: String, purchases: [Date] = []) {
         self.name = name
@@ -36,6 +38,7 @@ struct ItemMemory: Codable, Equatable {
         remind = try c.decodeIfPresent(Bool.self, forKey: .remind) ?? true
         price = try c.decodeIfPresent(Double.self, forKey: .price)
         category = try c.decodeIfPresent(String.self, forKey: .category)
+        priceHistory = try c.decodeIfPresent([PricePoint].self, forKey: .priceHistory) ?? []
     }
 
     var lastPurchase: Date? { purchases.max() }
@@ -93,6 +96,10 @@ struct SavedState: Codable {
     var groupByDish = false
     /// Готовые блюда из карточек товаров
     var dishes: [Dish] = []
+    /// Бюджет на поход, ₽ (nil — не задан)
+    var tripBudget: Double? = nil
+    /// Спрашивать цену при отметке «куплено»
+    var askPriceAtCheckout = true
     var showEqualizer = false
     var showPlaylist = true
     var skin: SkinID = .winamp
@@ -117,6 +124,8 @@ struct SavedState: Codable {
         groupByCategory = try c.decodeIfPresent(Bool.self, forKey: .groupByCategory) ?? true
         groupByDish = try c.decodeIfPresent(Bool.self, forKey: .groupByDish) ?? false
         dishes = try c.decodeIfPresent([Dish].self, forKey: .dishes) ?? []
+        tripBudget = try c.decodeIfPresent(Double.self, forKey: .tripBudget)
+        askPriceAtCheckout = try c.decodeIfPresent(Bool.self, forKey: .askPriceAtCheckout) ?? true
         showEqualizer = try c.decodeIfPresent(Bool.self, forKey: .showEqualizer) ?? false
         showPlaylist = try c.decodeIfPresent(Bool.self, forKey: .showPlaylist) ?? true
         skin = (try? c.decodeIfPresent(SkinID.self, forKey: .skin)) ?? .winamp
@@ -162,6 +171,10 @@ final class ShopStore: ObservableObject {
     @Published var editingDish: Dish?
     /// Раскрытое блюдо в окне «Блюда и рецепты»
     @Published var openDishID: UUID?
+    /// Окно «Бюджет похода»
+    @Published var isEditingBudget = false
+    /// Вопрос «почём?» после отметки товара купленным
+    @Published var pricePrompt: PricePrompt?
     private var toastToken = UUID()
 
     private let fileURL: URL?
@@ -406,6 +419,7 @@ final class ShopStore: ObservableObject {
             MenuAction(title: "Изменить выбранный товар…") { [weak self] in self?.edit(self?.selectedID) },
             MenuAction(title: "Подобрать из карточек товаров…") { [weak self] in self?.isEditingMemory = true },
             MenuAction(title: "Блюда и рецепты…") { [weak self] in self?.openDishes() },
+            MenuAction(title: "Бюджет похода…") { [weak self] in self?.openBudget() },
             MenuAction(title: "Добавить всё, что пора купить") { [weak self] in self?.addDue() },
             MenuAction(title: "Новый поход (список по срокам)") { [weak self] in self?.startNewTrip() },
             MenuAction(title: state.sortBought ? "Не сортировать купленное" : "Купленное — в конец") { [weak self] in
@@ -552,6 +566,12 @@ final class ShopStore: ObservableObject {
         s.items[i] = item
         s.memory[key] = memory
         state = s
+        // на кассе — спросить цену (подставлена прошлая, ✓ — подтвердить)
+        if value, state.askPriceAtCheckout {
+            pricePrompt = PricePrompt(name: item.name, qty: item.qty)
+        } else if !value, pricePrompt?.name == item.name {
+            pricePrompt = nil
+        }
     }
 
     func setQty(_ id: UUID?, _ qty: Int) {
@@ -672,6 +692,18 @@ extension ShopStore {
                               ("Яйца", 129), ("Кофе", 690), ("Вода", 45), ("Гречка", 99)] {
             store.setPrice(name, price)
         }
+        // бюджет и история цен для демо: список чуть дороже бюджета
+        store.state.tripBudget = 1500
+        let day = 86_400.0
+        store.state.memory[key("Бананы")]?.priceHistory = [
+            PricePoint(date: now.addingTimeInterval(-200 * day), price: 19),
+            PricePoint(date: now.addingTimeInterval(-90 * day), price: 22),
+            PricePoint(date: now.addingTimeInterval(-10 * day), price: 25),
+        ]
+        store.state.memory[key("Сыр")]?.priceHistory = [
+            PricePoint(date: now.addingTimeInterval(-150 * day), price: 389),
+            PricePoint(date: now.addingTimeInterval(-3 * day), price: 459),
+        ]
         // блюда для демо
         store.state.dishes = [
             Dish(name: "Салат с фетой", emoji: "🥗", ingredients: ["Огурцы", "Помидоры черри", "Фета", "Маслины"],
@@ -681,6 +713,8 @@ extension ShopStore {
             Dish(name: "Завтрак", emoji: "🍳", ingredients: ["Яйца", "Хлеб бородинский", "Бекон", "Кофе"]),
         ]
         store.selectedID = store.state.items.first { $0.name == "Бананы" }?.id
+        // демо отмечает сыр купленным — вопрос «почём?» при запуске не нужен
+        store.pricePrompt = nil
         return store
     }
 }

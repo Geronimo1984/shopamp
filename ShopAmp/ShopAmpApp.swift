@@ -34,6 +34,9 @@ struct ShopAmpApp: App {
                         if args.contains("-dishes") { store.openDishes(store.state.dishes.first?.id) }
                         if args.contains("-dishedit") { store.editingDish = store.state.dishes.first }
                         if args.contains("-dishnew") { store.newDish(fromList: true) }
+                        // умная корзина: -budget — окно бюджета, -priceprompt — «почём?» для бананов
+                        if args.contains("-budget") { store.openBudget() }
+                        if args.contains("-priceprompt") { store.pricePrompt = PricePrompt(name: "Бананы", qty: 6) }
                         // совмещение товаров: -combine — меню «Огурцы + Фета», -combine2 — «Бананы + Яйца», -dragdemo — товар под пальцем
                         if args.contains("-combine") { store.combine("Огурцы", onto: ShopStore.key("Фета")) }
                         if args.contains("-combine2") { store.combine("Бананы", onto: ShopStore.key("Яйца")) }

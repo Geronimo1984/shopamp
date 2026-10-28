@@ -92,6 +92,21 @@ struct ContentView: View {
     var body: some View {
         skinView
             .preferredColorScheme(store.state.skin.isLight ? .light : .dark)
+            // «почём?» на кассе — над экраном скина, под окнами
+            .overlay {
+                if let prompt = store.pricePrompt {
+                    VStack {
+                        Spacer()
+                        PricePromptBar(prompt: prompt)
+                            .id(prompt.id)
+                            .padding(.horizontal, 10)
+                            .padding(.bottom, keyboard.height > 0 ? keyboard.height + 52 : KeyboardWatcher.insets.bottom + 64)
+                            .transition(.move(edge: .bottom).combined(with: .opacity))
+                    }
+                    .ignoresSafeArea()
+                }
+            }
+            .animation(.spring(response: 0.3, dampingFraction: 0.85), value: store.pricePrompt)
             .overlayPreferenceValue(AssistAnchorKey.self) { anchors in
                 GeometryReader { proxy in
                     AssistantLayer(anchors: anchors.mapValues { proxy[$0] }, size: proxy.size)
@@ -102,6 +117,8 @@ struct ContentView: View {
                     HelpView(skin: store.state.skin)
                 } else if let dish = store.editingDish {
                     DishEditorView(skin: store.state.skin, draft: dish).id(dish.id)
+                } else if store.isEditingBudget {
+                    BudgetView(skin: store.state.skin)
                 } else if store.isViewingDishes {
                     DishesView(skin: store.state.skin)
                 } else if store.isEditingMemory {

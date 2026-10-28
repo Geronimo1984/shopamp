@@ -159,6 +159,7 @@ struct AssistantLayer: View {
     private var hidden: Bool {
         store.isAdding || store.editingID != nil || store.isChoosingSkin || store.showHelp
             || store.isEditingMemory || store.menu != nil || store.isViewingDishes || store.editingDish != nil
+            || store.isEditingBudget || store.pricePrompt != nil
     }
 
     var body: some View {

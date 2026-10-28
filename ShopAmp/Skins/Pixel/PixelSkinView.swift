@@ -225,12 +225,14 @@ ScrollView(.vertical, showsIndicators: false) {
                 Circle().fill(Px.pink).overlay(Circle().stroke(Px.ink, lineWidth: 2)).frame(width: 16, height: 16)
                 HStack {
                     Spacer()
-                    Text("В КОРЗИНЕ \(store.boughtCount)/\(store.totalCount)" + (store.hasPrices ? " · \(Int(store.cartTotal.rounded()))/" + ShopStore.total(store.listTotal) : ""))
+                    Text(cartLine)
                         .font(Px.title(8))
                         .lineLimit(1)
                         .minimumScaleFactor(0.6)
-                        .foregroundStyle(Px.ink)
+                        .foregroundStyle(store.isOverBudget ? Px.pink : Px.ink)
                 }
+                .contentShape(Rectangle())
+                .onTapGesture { store.openBudget() }
                 .padding(.horizontal, 6)
                 .frame(height: 22)
                 .background(PixelRect(step: 2).fill(.white))
@@ -243,6 +245,16 @@ ScrollView(.vertical, showsIndicators: false) {
 
     private var slotCount: Int {
         tab == .due ? store.dueSuggestions.count : tabItems.count
+    }
+
+    /// «В КОРЗИНЕ 1/6 · 459/1 651 ₽ ▲ +151»
+    private var cartLine: String {
+        var line = "В КОРЗИНЕ \(store.boughtCount)/\(store.totalCount)"
+        if store.hasPrices {
+            line += " · \(Int(store.cartTotal.rounded()))/" + ShopStore.total(store.listTotal)
+        }
+        if let tag = store.budgetTag { line += " " + tag }
+        return line
     }
 
     private func slot(_ item: ShopItem) -> some View {

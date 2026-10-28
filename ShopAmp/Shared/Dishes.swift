@@ -171,6 +171,8 @@ extension ShopStore {
                 moved.append(name)
             }
         }
+        // сразу несколько товаров — цену по одному не спрашиваем
+        pricePrompt = nil
         notify(moved.isEmpty
                ? "Для «\(dish.name)» всё уже в корзине"
                : "В корзину для «\(dish.name)»: " + moved.joined(separator: ", "))

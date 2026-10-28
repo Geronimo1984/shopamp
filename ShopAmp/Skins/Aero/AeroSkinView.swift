@@ -253,6 +253,11 @@ ScrollView(.vertical, showsIndicators: false) {
                 summaryRow("корзина", ShopStore.total(store.cartTotal))
                 summaryRow("список", "~" + ShopStore.total(store.listTotal))
             }
+            if let budget = store.state.tripBudget {
+                summaryRow(store.isOverBudget ? "перебор" : "бюджет",
+                           store.isOverBudget ? "+" + ShopStore.total(store.listTotal - budget) : ShopStore.total(budget))
+                    .foregroundStyle(store.isOverBudget ? Color(hex: 0xFFD27A) : .white)
+            }
             summaryRow("купить снова", "\(store.dueSuggestions.count)")
             Spacer(minLength: 0)
             XPProgressBar(value: store.totalCount == 0 ? 0 : Double(store.boughtCount) / Double(store.totalCount))
@@ -260,6 +265,8 @@ ScrollView(.vertical, showsIndicators: false) {
         }
         .padding(10)
         .frame(width: 136)
+        .contentShape(Rectangle())
+        .onTapGesture { store.openBudget() }
         .frame(maxHeight: .infinity, alignment: .top)
         .background(XPPanel())
     }

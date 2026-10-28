@@ -499,7 +499,19 @@ ScrollView(.vertical, showsIndicators: false) {
                     .font(Mac.font(15, .bold))
                     .lineLimit(1)
                     .minimumScaleFactor(0.6)
+                // бюджет: при переборе — инверсная метка, как предупреждение в Mac OS
+                if let tag = store.budgetTag {
+                    Text(tag)
+                        .font(Mac.font(13, .bold))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.6)
+                        .padding(.horizontal, 4)
+                        .foregroundStyle(store.isOverBudget ? Mac.paper : Mac.ink)
+                        .background(store.isOverBudget ? Mac.ink : Color.clear)
+                }
             }
+            .contentShape(Rectangle())
+            .onTapGesture { store.openBudget() }
             // справа — место для скрепки
             Spacer()
         }

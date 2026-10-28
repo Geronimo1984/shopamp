@@ -318,10 +318,18 @@ ScrollView(.vertical, showsIndicators: false) {
                 StrokedText(text: store.hasPrices ? "Корзина: \(ShopStore.total(store.cartTotal))!" : "В корзине: \(store.boughtCount)!", font: .custom("Georgia", size: 14).weight(.black).italic(),
                             fill: AnyShapeStyle(Color(hex: 0xE8231A)), stroke: .white, width: 1.3)
                     .rotationEffect(.degrees(-8))
+                    .onTapGesture { store.openBudget() }
             }
             Text("Нажмите на товар, затем ещё раз — откроется его карточка. ✎ — изменить, ✓ — куплено.")
                 .font(Sims.verdana(12, .bold))
                 .foregroundStyle(Sims.ink)
+            if let verdict = store.budgetVerdictText {
+                // бюджет похода: зелёный — укладываемся, красный — перебор
+                Text("Бюджет " + ShopStore.total(store.state.tripBudget ?? 0) + ": " + verdict)
+                    .font(Sims.verdana(12, .bold))
+                    .foregroundStyle(store.isOverBudget ? Color(hex: 0xC8261A) : Color(hex: 0x1E7A1E))
+                    .onTapGesture { store.openBudget() }
+            }
             if store.state.items.isEmpty {
                 Text("* Пока пусто — нажмите «Добавить» в меню")
                     .font(Sims.verdana(11, .bold))
