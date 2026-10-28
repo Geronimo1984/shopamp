@@ -159,7 +159,7 @@ struct AssistantLayer: View {
     private var hidden: Bool {
         store.isAdding || store.editingID != nil || store.isChoosingSkin || store.showHelp
             || store.isEditingMemory || store.menu != nil || store.isViewingDishes || store.editingDish != nil
-            || store.isEditingBudget || store.pricePrompt != nil
+            || store.isEditingBudget
     }
 
     var body: some View {
@@ -441,13 +441,14 @@ struct BalloonStyle {
 /// почти белый блик, светлый отражённый свет снизу, серо-белая «наклейка» по контуру и тень.
 /// animated: дышит, подпрыгивает с приплющиванием, по голове пробегает блик, кивает, когда говорит.
 struct MSNBuddy: View {
+    @Environment(\.decorPaused) private var decorPaused
     var animated = false
     var lean: Double = 0
     var talking: Date = .distantPast
 
     var body: some View {
         if animated {
-            TimelineView(.animation(minimumInterval: 1 / 30)) { context in
+            TimelineView(.animation(minimumInterval: 1 / 30, paused: decorPaused)) { context in
                 frame(t: context.date.timeIntervalSinceReferenceDate, now: context.date)
             }
         } else {
@@ -572,12 +573,13 @@ struct MSNBuddy: View {
 
 /// Летающий зелёный пламбоб с сиянием и тенью
 struct FlyingPlumbob: View {
+    @Environment(\.decorPaused) private var decorPaused
     var lean: Double = 0
     /// До этого момента пламбоб красный (настроение испорчено)
     var angryUntil: Date = .distantPast
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: 1 / 30)) { context in
+        TimelineView(.animation(minimumInterval: 1 / 30, paused: decorPaused)) { context in
             let t = context.date.timeIntervalSinceReferenceDate
             let angry = context.date < angryUntil
             let lift = CGFloat(sin(t * (angry ? 9 : 1.8))) * (angry ? 3 : 6)
@@ -603,10 +605,11 @@ struct FlyingPlumbob: View {
 
 /// Пульсирующий значок «?» над помощником
 struct AttentionBadge: View {
+    @Environment(\.decorPaused) private var decorPaused
     let skin: SkinID
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: 1 / 30)) { context in
+        TimelineView(.animation(minimumInterval: 1 / 30, paused: decorPaused)) { context in
             let t = context.date.timeIntervalSinceReferenceDate
             let pulse = 1 + CGFloat(sin(t * 4)) * 0.12
             let bob = CGFloat(sin(t * 2.5)) * 2
@@ -637,11 +640,12 @@ struct AttentionBadge: View {
 
 /// Подсветка элемента: экран затемнён, элемент «вырезан» и обведён пульсирующей рамкой в цвете скина
 struct TargetSpotlight: View {
+    @Environment(\.decorPaused) private var decorPaused
     let rect: CGRect
     let skin: SkinID
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: 1 / 30)) { context in
+        TimelineView(.animation(minimumInterval: 1 / 30, paused: decorPaused)) { context in
             let t = context.date.timeIntervalSinceReferenceDate
             let pulse = (sin(t * 5) + 1) / 2
             ZStack(alignment: .topLeading) {

@@ -89,24 +89,38 @@ struct ContentView: View {
     @EnvironmentObject var store: ShopStore
     @StateObject private var keyboard = KeyboardWatcher()
 
+    /// Сообщение не ложится на клавиатуру и на полоску «почём?»
+    private var toastBottom: CGFloat {
+        let base: CGFloat = keyboard.height > 0 ? keyboard.height + 60 : 70
+        return store.pricePrompt == nil ? base : base + 64
+    }
+
+    /// Поверх скина открыто окно или меню — скин целиком закрыт затемнением
+    private var windowOpen: Bool {
+        store.showHelp || store.isEditingMemory || store.isViewingDishes || store.editingDish != nil
+            || store.isEditingBudget || store.menu != nil || store.iconPickerName != nil
+    }
+
     var body: some View {
         skinView
+            .environment(\.decorPaused, windowOpen)
             .preferredColorScheme(store.state.skin.isLight ? .light : .dark)
             // «почём?» на кассе — над экраном скина, под окнами
             .overlay {
-                if let prompt = store.pricePrompt {
-                    VStack {
-                        Spacer()
+                // анимация — только у полоски: на весь экран она «пружинила» и список (зачёркивание, порядок, суммы)
+                VStack {
+                    Spacer()
+                    if let prompt = store.pricePrompt {
                         PricePromptBar(prompt: prompt)
                             .id(prompt.id)
                             .padding(.horizontal, 10)
                             .padding(.bottom, keyboard.height > 0 ? keyboard.height + 52 : KeyboardWatcher.insets.bottom + 64)
                             .transition(.move(edge: .bottom).combined(with: .opacity))
                     }
-                    .ignoresSafeArea()
                 }
+                .ignoresSafeArea()
+                .animation(.spring(response: 0.3, dampingFraction: 0.85), value: store.pricePrompt)
             }
-            .animation(.spring(response: 0.3, dampingFraction: 0.85), value: store.pricePrompt)
             .overlayPreferenceValue(AssistAnchorKey.self) { anchors in
                 GeometryReader { proxy in
                     AssistantLayer(anchors: anchors.mapValues { proxy[$0] }, size: proxy.size)
@@ -162,15 +176,17 @@ struct ContentView: View {
                     if let toast = store.toast {
                         ToastView(text: toast, skin: store.state.skin)
                             .padding(.horizontal, 20)
-                            .padding(.bottom, keyboard.height > 0 ? keyboard.height + 60 : 70)
+                            .padding(.bottom, toastBottom)
                             .transition(.move(edge: .bottom).combined(with: .opacity))
                             .onTapGesture { store.toast = nil }
                     }
                 }
                 // отступ от клавиатуры считается вручную
                 .ignoresSafeArea(.keyboard)
+                .animation(.spring(response: 0.35, dampingFraction: 0.8), value: store.toast)
+                // полоска «почём?» скрылась — сообщение плавно опускается на её место
+                .animation(.spring(response: 0.3, dampingFraction: 0.85), value: store.pricePrompt == nil)
             }
-            .animation(.spring(response: 0.35, dampingFraction: 0.8), value: store.toast)
             .onAppear {
                 if !store.state.seenHelp { store.showHelp = true }
             }

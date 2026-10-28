@@ -26,6 +26,11 @@ struct ShopAmpApp: App {
                         store.state.skin = skin
                     }
                     if args.contains("-shop") { store.isShopping = true }
+                    #if DEBUG
+                    if args.contains("-selftest") { SelfTest.run() }
+                    // сценарий для проверки анимаций на записи экрана: отметки, «почём?», сообщения, окна
+                    if args.contains("-animdemo") { SelfTest.animationScript(store) }
+                    #endif
                     // окна для скриншотов: -help, -memory, -menu, -edit
                     if args.contains("-demo") {
                         if args.contains("-help") { store.showHelp = true }

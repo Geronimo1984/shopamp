@@ -29,12 +29,15 @@ extension ShopStore {
         return total <= budget ? .fits(left: budget - total) : .over(by: total - budget)
     }
 
-    /// «Уложитесь, запас ~800 ₽» / «Перебор ~600 ₽»; nil — бюджет не задан
+    /// «Уложитесь, запас ~800 ₽» / «Перебор ~600 ₽»; nil — бюджет не задан.
+    /// Товары без цены в сумму не входят — об этом честно говорится
     var budgetVerdictText: String? {
+        let unpriced = state.items.filter { !$0.bought && price($0.name) == nil }.count
+        let note = unpriced > 0 ? " (без цены: \(unpriced))" : ""
         switch budgetVerdict {
         case .none: return nil
-        case .fits(let left): return "уложитесь, запас ~" + Self.total(left)
-        case .over(let by): return "перебор ~" + Self.total(by)
+        case .fits(let left): return "уложитесь, запас ~" + Self.total(left) + note
+        case .over(let by): return "перебор ~" + Self.total(by) + note
         }
     }
 

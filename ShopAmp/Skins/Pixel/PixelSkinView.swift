@@ -72,7 +72,12 @@ ScrollView(.vertical, showsIndicators: false) {
     }
 
     private func fire(_ text: String, big: Bool) {
-        burst = (Date(), text, big)
+        let now = Date()
+        burst = (now, text, big)
+        // вспышка закончилась — убрать её, иначе невидимая анимация крутится дальше
+        DispatchQueue.main.asyncAfter(deadline: .now() + (big ? 2.4 : 1.2)) {
+            if burst?.date == now { burst = nil }
+        }
     }
 
     /// Планета — просто волшебная вспышка
@@ -491,6 +496,7 @@ ScrollView(.vertical, showsIndicators: false) {
 // MARK: - Сцена: стена, окно с луной, Луна-кошка, звёзды и сердечки
 
 struct MoonScene: View {
+    @Environment(\.decorPaused) private var decorPaused
     let onPlanet: () -> Void
     let onCrane: () -> Void
 
@@ -501,7 +507,7 @@ struct MoonScene: View {
             let w = g.size.width, h = g.size.height
             let floorY = h - 22
             ZStack(alignment: .topLeading) {
-                TimelineView(.animation(minimumInterval: 1 / 20)) { context in
+                TimelineView(.animation(minimumInterval: 1 / 20, paused: decorPaused)) { context in
                     let t = context.date.timeIntervalSinceReferenceDate
                     ZStack(alignment: .topLeading) {
                         bricks(t: t)

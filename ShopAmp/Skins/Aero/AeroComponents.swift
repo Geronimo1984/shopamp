@@ -617,12 +617,13 @@ struct XPStartButton: View {
 /// Кнопка «пуск» Windows XP: выпуклый глянец, мягкий диагональный блик раз в несколько секунд;
 /// при нажатии темнеет и вдавливается
 struct XPStartStyle: ButtonStyle {
+    @Environment(\.decorPaused) private var decorPaused
     func makeBody(configuration: Configuration) -> some View {
         let pressed = configuration.isPressed
         return configuration.label
             .offset(y: pressed ? 1 : 0)
             .background(
-                TimelineView(.animation(minimumInterval: 1 / 30)) { context in
+                TimelineView(.animation(minimumInterval: 1 / 30, paused: decorPaused)) { context in
                     let t = context.date.timeIntervalSinceReferenceDate
                     // блик проходит за 0.9 с, затем пауза; плавное ускорение и торможение
                     let raw = t.truncatingRemainder(dividingBy: 4) / 0.9

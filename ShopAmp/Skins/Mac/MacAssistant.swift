@@ -68,11 +68,12 @@ extension CGPoint: Hashable {
 }
 
 struct ClippyView: View {
+    @Environment(\.decorPaused) private var decorPaused
     let animation: String
     let start: Date
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: 1 / 30)) { context in
+        TimelineView(.animation(minimumInterval: 1 / 30, paused: decorPaused)) { context in
             let origin = ClippySprites.shared.origin(animation, elapsed: context.date.timeIntervalSince(start))
             if let img = ClippySprites.shared.image(at: origin) {
                 Image(decorative: img, scale: 1)
@@ -130,8 +131,9 @@ struct BalloonShape: Shape {
 
 /// «Бегущие муравьи» — пунктирная рамка выделения
 struct MarchingAnts: View {
+    @Environment(\.decorPaused) private var decorPaused
     var body: some View {
-        TimelineView(.animation(minimumInterval: 1 / 15)) { context in
+        TimelineView(.animation(minimumInterval: 1 / 15, paused: decorPaused)) { context in
             let phase = CGFloat(context.date.timeIntervalSinceReferenceDate * 16).truncatingRemainder(dividingBy: 8)
             ZStack {
                 Rectangle().stroke(Mac.paper, lineWidth: 3)

@@ -3,6 +3,7 @@ import SwiftUI
 /// Hello Kitty с сигаретой (картинка пользователя) — помощник скина Winamp.
 /// Поверх картинки: моргание, тлеющий огонёк при затяжке, струйка и клубы дыма, лёгкое «дыхание».
 struct KittySmoker: View {
+    @Environment(\.decorPaused) private var decorPaused
     @EnvironmentObject private var store: ShopStore
 
     // Точки на картинке в долях её размера
@@ -11,7 +12,7 @@ struct KittySmoker: View {
     private let tip = CGPoint(x: 0.262, y: 0.688)
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: 1 / 24)) { context in
+        TimelineView(.animation(minimumInterval: 1 / 24, paused: decorPaused)) { context in
             let t = context.date.timeIntervalSinceReferenceDate
             let cycle = t.truncatingRemainder(dividingBy: 5)
             let inhale = cycle < 1.2 ? sin(cycle / 1.2 * .pi) : 0

@@ -150,12 +150,13 @@ private func drawSprite(_ c: inout GraphicsContext, _ rows: [String], _ palette:
 // MARK: - Всплывающие звёздочки (star_burst из трекера)
 
 struct StarBurst: View {
+    @Environment(\.decorPaused) private var decorPaused
     let start: Date
     let count: Int
     let palettes: [[Character: Color]]
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: 1 / 30)) { context in
+        TimelineView(.animation(minimumInterval: 1 / 30, paused: decorPaused)) { context in
             Canvas { c, size in
                 let elapsed = context.date.timeIntervalSince(start) / 0.08
                 var rng = SeededRandom(seed: UInt64(start.timeIntervalSinceReferenceDate * 1000) & 0xFFFF)
@@ -184,12 +185,13 @@ struct StarBurst: View {
 // MARK: - Кирби на звезде
 
 struct KirbyRider: View {
+    @Environment(\.decorPaused) private var decorPaused
     @State private var hopStart = Date.distantPast
     @State private var burst: Date?
     var lively = false
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: 1 / 25)) { context in
+        TimelineView(.animation(minimumInterval: 1 / 25, paused: decorPaused)) { context in
             let f = trackerFrame(context.date)
             let hop = context.date.timeIntervalSince(hopStart) / 0.08
             let hopping = hop < 18
@@ -247,6 +249,7 @@ struct KirbyRider: View {
 // MARK: - Автомат Kirby Crane Fever с клешнёй
 
 struct CraneMachine: View {
+    @Environment(\.decorPaused) private var decorPaused
     @State private var burst: Date?
     let onTap: () -> Void
 
@@ -254,7 +257,7 @@ struct CraneMachine: View {
     private let clawAt = CGPoint(x: 61, y: 75)
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: 1 / 25)) { context in
+        TimelineView(.animation(minimumInterval: 1 / 25, paused: decorPaused)) { context in
             let f = trackerFrame(context.date)
             let k = f % 90
             let (drop, grip): (CGFloat, CGFloat) = {
@@ -320,10 +323,11 @@ struct CraneMachine: View {
 // MARK: - Планета с вращающимся кольцом
 
 struct RingPlanet: View {
+    @Environment(\.decorPaused) private var decorPaused
     var fast = false
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: 1 / 25)) { context in
+        TimelineView(.animation(minimumInterval: 1 / 25, paused: decorPaused)) { context in
             let f = trackerFrame(context.date)
             let k = (fast ? f : f / 2) % 16
             Canvas { c, size in
@@ -371,10 +375,11 @@ struct RingPlanet: View {
 // MARK: - «Готово»: диск Kirby Air Ride (30 кадров по 100 мс)
 
 struct DoneKirbyDisc: View {
+    @Environment(\.decorPaused) private var decorPaused
     let start: Date
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: 1 / 20)) { context in
+        TimelineView(.animation(minimumInterval: 1 / 20, paused: decorPaused)) { context in
             let i = Int(context.date.timeIntervalSince(start) / 0.1) % 30
             Image("pixel_done_\(i)").interpolation(.none)
         }
@@ -385,11 +390,12 @@ struct DoneKirbyDisc: View {
 // MARK: - Луна из «Сейлор Мун»: хвост покачивается, моргает, полумесяц блестит
 
 struct LunaCat: View {
+    @Environment(\.decorPaused) private var decorPaused
     @EnvironmentObject private var store: ShopStore
     @State private var meow: Date?
 
     var body: some View {
-        TimelineView(.animation) { context in
+        TimelineView(.animation(minimumInterval: 1 / 20, paused: decorPaused)) { context in
             let t = context.date.timeIntervalSinceReferenceDate
             // моргание: раз в ~4 с, иногда двойное
             let cycle = t.truncatingRemainder(dividingBy: 4.3)

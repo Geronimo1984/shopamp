@@ -91,3 +91,17 @@ extension View {
             .buttonStyle(SkinPressStyle(skin: skin))
     }
 }
+
+// MARK: - Пауза украшений
+
+private struct DecorPausedKey: EnvironmentKey {
+    static let defaultValue = false
+}
+
+extension EnvironmentValues {
+    /// Открыто окно поверх скина — фоновые анимации (персонажи, плитки, сцены) стоят, процессор не тратится
+    var decorPaused: Bool {
+        get { self[DecorPausedKey.self] }
+        set { self[DecorPausedKey.self] = newValue }
+    }
+}

@@ -259,12 +259,13 @@ struct PixelBar: View {
 // MARK: - Вспышка искр («Лунная призма»)
 
 struct SparkleBurst: View {
+    @Environment(\.decorPaused) private var decorPaused
     let start: Date
     var text: String? = nil
     var big = false
 
     var body: some View {
-        TimelineView(.animation) { context in
+        TimelineView(.animation(minimumInterval: 1 / 30, paused: decorPaused)) { context in
             let duration = big ? 2.2 : 1.0
             let p = min(context.date.timeIntervalSince(start) / duration, 1)
             ZStack {

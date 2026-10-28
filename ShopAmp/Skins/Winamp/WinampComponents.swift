@@ -494,10 +494,11 @@ struct Marquee: View {
 
 /// Спектр-анализатор под цифрами
 struct Visualizer: View {
+    @Environment(\.decorPaused) private var decorPaused
     let playing: Bool
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: 0.09, paused: !playing)) { context in
+        TimelineView(.animation(minimumInterval: 0.09, paused: !playing || decorPaused)) { context in
             Canvas { c, size in
                 let t = context.date.timeIntervalSinceReferenceDate
                 let dot: CGFloat = 3

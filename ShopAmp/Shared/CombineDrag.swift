@@ -11,7 +11,10 @@ final class CombineDrag: ObservableObject {
     /// Над чем сейчас палец — подсвечивается
     @Published private(set) var target: String?
     /// Палец удерживает товар — прокрутка списков на это время выключена, иначе перетаскивание листало бы список
-    @Published var holding = false
+    var holding: Bool {
+        get { CombineScrollState.shared.locked }
+        set { if CombineScrollState.shared.locked != newValue { CombineScrollState.shared.locked = newValue } }
+    }
     private(set) var scope = ""
 
     /// Где на экране цели: ключ цели → рамка в глобальных координатах. Не публикуется — меняется при прокрутке
@@ -233,11 +236,18 @@ private struct CombineTargetModifier: ViewModifier {
 
 /// Пока товар удерживают, списки не прокручиваются (scrollDisabled действует на все вложенные ScrollView)
 struct CombineScrollLock: ViewModifier {
-    @ObservedObject private var drag = CombineDrag.shared
+    @ObservedObject private var scroll = CombineScrollState.shared
 
     func body(content: Content) -> some View {
-        content.scrollDisabled(drag.holding)
+        content.scrollDisabled(scroll.locked)
     }
+}
+
+/// Только флаг блокировки прокрутки: корень экрана следит за ним, а не за всем перетаскиванием
+@MainActor
+final class CombineScrollState: ObservableObject {
+    static let shared = CombineScrollState()
+    @Published var locked = false
 }
 
 /// Сообщает рамку цели на экране

@@ -38,6 +38,7 @@ enum Sims {
 
 /// Ромб-кристалл. Цвет — «настроение»: красный → жёлтый → зелёный по прогрессу покупок.
 struct Plumbob: View {
+    @Environment(\.decorPaused) private var decorPaused
     var mood: Double = 1
     var spinning = true
 
@@ -48,7 +49,7 @@ struct Plumbob: View {
     }
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: 1 / 30, paused: !spinning)) { context in
+        TimelineView(.animation(minimumInterval: 1 / 30, paused: !spinning || decorPaused)) { context in
             let t = context.date.timeIntervalSinceReferenceDate
             let turn = spinning ? cos(t * 1.8) : 1
             Canvas { c, size in
@@ -207,6 +208,7 @@ struct StrokedText: View {
 
 /// Витрина блюд из The Sims: тарелки едут по кругу, над центральной поднимается пар
 struct SimsDishShow: View {
+    @Environment(\.decorPaused) private var decorPaused
     /// Канонические блюда из The Sims (порядок — как картинки sims_food_0…25)
     static let names = [
         "Блинчики", "Спагетти", "Чили", "Омлет", "Французские тосты", "Яичница-болтунья", "Сэндвич BLT",
@@ -219,7 +221,7 @@ struct SimsDishShow: View {
     private let period = 2.2
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: 1 / 30)) { context in
+        TimelineView(.animation(minimumInterval: 1 / 30, paused: decorPaused)) { context in
             let t = context.date.timeIntervalSinceReferenceDate
             let step = t / period
             let index = Int(step)
@@ -296,12 +298,13 @@ struct SimsDishShow: View {
 /// Логотип-шайба The Sims 2: оригинальная картинка, пламбоб остаётся частью логотипа —
 /// вокруг него пульсирует сияние и кружит искорка, по глянцу пробегает блик, шайба чуть «дышит»
 struct AnimatedSimsLogo: View {
+    @Environment(\.decorPaused) private var decorPaused
     var size: CGFloat = 104
 
     var body: some View {
         let s = size
         let plumbob = CGPoint(x: s * 0.448, y: s * 0.24)
-        TimelineView(.animation(minimumInterval: 1 / 30)) { context in
+        TimelineView(.animation(minimumInterval: 1 / 30, paused: decorPaused)) { context in
             let t = context.date.timeIntervalSinceReferenceDate
             let breathe = 1 + CGFloat(sin(t * 1.4)) * 0.012
             let pulse = (sin(t * 2.6) + 1) / 2
@@ -343,11 +346,12 @@ struct AnimatedSimsLogo: View {
 
 /// Картинка плитки меню: по плиткам волной пробегает подсветка — иконка приподнимается, за ней свечение и искорка
 struct SimsNavTileImage: View {
+    @Environment(\.decorPaused) private var decorPaused
     let image: String
     let index: Int
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: 1 / 30)) { context in
+        TimelineView(.animation(minimumInterval: 1 / 20, paused: decorPaused)) { context in
             let t = context.date.timeIntervalSinceReferenceDate
             // волна слева направо раз в 4.5 с, на каждую плитку ~0.6 с
             let phase = (t.truncatingRemainder(dividingBy: 4.5) - Double(index) * 0.32) / 0.6
