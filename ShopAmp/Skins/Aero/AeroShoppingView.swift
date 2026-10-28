@@ -165,14 +165,6 @@ struct AeroShoppingView: View {
                     .foregroundStyle(Aero.welcomeSub)
                     .frame(maxWidth: .infinity, alignment: .trailing)
             }
-            if let verdict = store.budgetVerdictText {
-                Text(verdict)
-                    .font(Aero.xp(11, .bold))
-                    .foregroundStyle(store.isOverBudget ? Color(hex: 0xFFD27A) : .white)
-                    .multilineTextAlignment(.trailing)
-                    .frame(maxWidth: .infinity, alignment: .trailing)
-                    .onTapGesture { store.openBudget() }
-            }
             Spacer()
         }
         .padding(.leading, 8)
@@ -356,12 +348,27 @@ struct AeroShoppingView: View {
         return HStack(spacing: 10) {
             ProductTile(name: item.name, size: 46, dimmed: item.bought)
             VStack(alignment: .leading, spacing: 4) {
-                Text(item.name)
-                    .font(Aero.xp(19))
-                    .foregroundStyle(.white)
-                    .strikethrough(item.bought, color: .white)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
+                HStack(spacing: 6) {
+                    Text(item.name)
+                        .font(Aero.xp(19))
+                        .foregroundStyle(.white)
+                        .strikethrough(item.bought, color: .white)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                    // перебор бюджета — пометкой у выбранного товара; нажатие открывает бюджет
+                    if selected, case .over(let by) = store.budgetVerdict {
+                        Text("перебор ~" + ShopStore.total(by))
+                            .font(Aero.xp(11, .bold))
+                            .foregroundStyle(Color(hex: 0x7A3A00))
+                            .lineLimit(1)
+                            .fixedSize()
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Capsule().fill(Color(hex: 0xFFD27A)))
+                            .overlay(Capsule().stroke(.white.opacity(0.8), lineWidth: 1))
+                            .onTapGesture { store.openBudget() }
+                    }
+                }
                 if selected && !item.bought {
                     HStack(spacing: 5) {
                         Text(store.qtyText(item))
